@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["cypress", "node"],
+    "isolatedModules": false
+  },
+  "include": ["**/*.ts", "**/*.tsx", "../cypress.config.ts"],
+  // The root config excludes cypress/ from the app build; reset it here or nothing is checked.
+  "exclude": ["../node_modules"]
+}

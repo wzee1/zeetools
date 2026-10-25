@@ -1,0 +1,522 @@
+/*
+ * @zeetools/ui design tokens, base layer and app-shell styles.
+ *
+ * In an app's globals.css, after Tailwind itself:
+ *
+ *   @import "tailwindcss";
+ *   @import "@zeetools/ui/styles/tokens.css";
+ *   @source "../node_modules/@zeetools/ui/src";   (in a workspace: the path to packages/ui/src)
+ *
+ * Tailwind v4 does not scan node_modules or workspace packages, so the @source line is what makes
+ * the package's classes exist. Nothing else is needed: colors, fonts, radii, the shell breakpoint,
+ * keyframes, the sidebar (.shell-*), the preloader and the entrance live here.
+ */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  /* App shell: a quiet base, one white panel inset on it (--panel), cards inside the panel. */
+  --background: #efefee;
+  --panel: #ffffff;
+  --surface: #f7f7f6;
+  --surface-raised: #ffffff;
+  /* Hairline: 13% ink. Decoration only; control outlines use --border-strong (3:1 against the page). */
+  --border: rgb(13 16 14 / 0.13);
+  --border-strong: #868b87;
+  --foreground: #0d100e;
+  --muted: #565d58;
+  /* One green for the brand, primary actions and success; deep enough for white labels (4.6:1). */
+  --primary: #12864b;
+  --primary-hover: #0e7d47;
+  --primary-foreground: #ffffff;
+  --primary-text: #0f7a46;
+  --brand: var(--primary);
+  --success: var(--primary-text);
+  --success-surface: #e6f7ee;
+  --danger: #c4231a;
+  --danger-solid: #c4231a;
+  --danger-solid-hover: #a51d15;
+  --ring: #12864b;
+  /* Portfolio names, shared with wzee.dev. */
+  --canvas: var(--background);
+  --ink: var(--foreground);
+  --ink-dim: var(--muted);
+  --line: var(--border);
+  --control: var(--border-strong);
+  --signal: var(--primary-text);
+}
+
+.dark {
+  /* Neutral greys, no tint: the base, the inset panel, then insets (surface) and cards (raised) on it. */
+  --background: #0b0b0c;
+  --panel: #161618;
+  --surface: #19191b;
+  --surface-raised: #1c1c1f;
+  /* Hairlines are white at low alpha, so they read the same on every elevation. */
+  --border: rgb(255 255 255 / 0.08);
+  /* Control outlines: 3.4:1 on cards, 3.7:1 on the page. */
+  --border-strong: #6e6e76;
+  --foreground: #ededef;
+  --muted: #9f9fa7;
+  --primary: #12864b;
+  --primary-hover: #179153;
+  --primary-foreground: #ffffff;
+  /* A calm green for text and rings (7:1 on cards); the accent marks actions and state, not decoration. */
+  --primary-text: #5dbb8a;
+  --brand: var(--primary);
+  --success: var(--primary-text);
+  --success-surface: rgb(93 187 138 / 0.12);
+  /* Text stays light for contrast; fills use a deeper red so white labels stay readable. */
+  --danger: #f0827a;
+  --danger-solid: #c43c33;
+  --danger-solid-hover: #a9332b;
+  --ring: #5dbb8a;
+  --canvas: var(--background);
+  --ink: var(--foreground);
+  --ink-dim: var(--muted);
+  --line: var(--border);
+  --control: var(--border-strong);
+  --signal: var(--primary-text);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-panel: var(--panel);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-text: var(--primary-text);
+  --color-brand: var(--brand);
+  --color-success: var(--success);
+  --color-success-surface: var(--success-surface);
+  --color-danger: var(--danger);
+  --color-danger-solid: var(--danger-solid);
+  --color-danger-solid-hover: var(--danger-solid-hover);
+  --color-ring: var(--ring);
+  --color-canvas: var(--canvas);
+  --color-ink: var(--ink);
+  --color-ink-dim: var(--ink-dim);
+  --color-line: var(--line);
+  --color-control: var(--control);
+  --color-signal: var(--signal);
+  /* One family: Inter. Mono is the system's. */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* The app shell (sidebar + inset panel) starts here; narrower screens get the top bar and a drawer. */
+  --breakpoint-shell: 53.125rem;
+  /* Soft corners: controls and buttons 8px, cards 12px, the shell panel 16px (rounded-2xl). No pills. */
+  --radius-control: 8px;
+  --radius-panel: 12px;
+  /*
+   * Apple-style curve for entrances and exits alike: fast start, long soft landing, no overshoot.
+   * Exits use it too; an ease-in exit saves its fastest part for the end, so the last ~20% of a fade pops.
+   */
+  --ease-out: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/*
+ * Frosted glass for layers that float above content. Translucent enough to hint at what is behind,
+ * opaque enough that text stays readable even where backdrop-filter is unsupported.
+ * Write only the standard property: the build adds the -webkit- prefix, and listing both
+ * lets the minifier collapse them into the prefixed one, which Chrome ignores.
+ */
+@utility glass {
+  background-color: color-mix(in oklab, var(--surface-raised) 80%, transparent);
+  backdrop-filter: blur(20px) saturate(1.6);
+}
+
+@utility glass-bar {
+  background-color: color-mix(in oklab, var(--background) 72%, transparent);
+  backdrop-filter: blur(16px) saturate(1.8);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans text-sm antialiased;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+}
+
+/*
+ * Theme switch: the new theme grows out of the toggle as a circle with a soft, feathered edge.
+ * useThemeSwitch animates these registered properties on the new snapshot.
+ */
+@property --reveal-r {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --reveal-x {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --reveal-y {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+  mask-image: radial-gradient(
+    circle at var(--reveal-x) var(--reveal-y),
+    #000 calc(var(--reveal-r) - 160px),
+    transparent var(--reveal-r)
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/*
+ * App shell sidebar. --sidebar-w comes from the boot script (lib/shell) and the resizer. Hiding animates
+ * the width down to a gutter while the content keeps its width and slides out, so nothing reflows.
+ * While dragging (html[data-resizing]) transitions are off and the edge follows the pointer 1:1.
+ */
+.shell-aside {
+  width: var(--sidebar-w, 15.5rem);
+  overflow: hidden;
+  transition: width 320ms var(--ease-out);
+}
+
+.shell-aside-inner {
+  width: var(--sidebar-w, 15.5rem);
+  transition:
+    opacity 220ms var(--ease-out),
+    transform 320ms var(--ease-out);
+}
+
+html[data-sidebar="collapsed"] .shell-aside {
+  width: 0.5rem;
+}
+
+html[data-sidebar="collapsed"] .shell-aside-inner {
+  opacity: 0;
+  transform: translateX(-16px);
+  pointer-events: none;
+}
+
+html[data-resizing] .shell-aside,
+html[data-resizing] .shell-aside-inner {
+  transition: none;
+}
+
+html[data-resizing] {
+  cursor: col-resize;
+  user-select: none;
+}
+
+/* The panel's "show sidebar" button appears once the sidebar has slid away. */
+.shell-expand {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms var(--ease-out);
+}
+
+html[data-sidebar="collapsed"] .shell-expand {
+  opacity: 1;
+  pointer-events: auto;
+  transition-delay: 160ms;
+}
+
+/* Preloader: covers the first frames until hydration, then fades on the shared curve. */
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--background);
+  transition:
+    opacity 320ms var(--ease-out),
+    visibility 0s linear 320ms;
+  /* If scripts never run, it still gets out of the way. */
+  animation: preloader-failsafe 0.01s linear 4s forwards;
+}
+
+.preloader-track {
+  position: relative;
+  width: 7.5rem;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 1px;
+  background-color: var(--border);
+}
+
+.preloader-bar {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 40%;
+  background-color: var(--primary-text);
+  animation: indeterminate 1.1s var(--ease-out) infinite;
+}
+
+html[data-ready] .preloader {
+  opacity: 0;
+  visibility: hidden;
+}
+
+@keyframes preloader-failsafe {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* Entrance once the preloader lifts: the sidebar slides in, the panel rises in just after it. */
+@media (prefers-reduced-motion: no-preference) {
+  html[data-ready] [data-enter="sidebar"] {
+    animation: shell-sidebar-in 520ms var(--ease-out) both;
+  }
+
+  html[data-ready] [data-enter="panel"] {
+    animation: shell-panel-in 620ms var(--ease-out) 60ms both;
+  }
+}
+
+@keyframes shell-sidebar-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+}
+
+@keyframes shell-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* The theme icon renders after hydration, so the first paint can't show the wrong one. Until then
+   the button draws it from the class next-themes sets before paint (as on wzee.dev). */
+[data-theme-toggle]:empty::before {
+  content: "";
+  width: 1rem;
+  height: 1rem;
+  background-color: currentColor;
+  mask: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='4'/><path d='M12 2v2M12 20v2m-7.07-17.07 1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41'/></svg>") center / contain no-repeat;
+}
+
+.dark [data-theme-toggle]:empty::before {
+  mask-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><defs><mask id='m'><rect width='24' height='24' fill='white'/><circle r='6' fill='black' cx='17.5' cy='6.5'/></mask><clipPath id='c'><circle cx='12' cy='12' r='9'/></clipPath></defs><circle cx='12' cy='12' r='9' mask='url(%23m)'/><circle r='6' cx='17.5' cy='6.5' clip-path='url(%23c)'/></svg>");
+}
+
+/* The phone drawer slides in from the left edge and back out on the same curve. */
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+}
+
+@keyframes sheet-out {
+  to {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+/* Dialogs are centered with the `translate` property, so these only touch `transform`. */
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+}
+
+@keyframes dialog-out {
+  to {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+
+@keyframes tooltip-in {
+  from {
+    opacity: 0;
+    transform: translate(var(--tooltip-dx, 0), var(--tooltip-dy, 0)) scale(0.97);
+  }
+}
+
+@keyframes drop-flash {
+  from {
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--primary) 30%, transparent);
+  }
+}
+
+/* Popovers, menus and selects grow from their trigger (Radix sets the transform origin). */
+@keyframes popover-in {
+  from {
+    opacity: 0;
+    transform: translate(var(--popover-dx, 0), var(--popover-dy, 0)) scale(0.96);
+  }
+}
+
+@keyframes popover-out {
+  to {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes indeterminate {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+
+@keyframes content-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+    filter: blur(2px);
+  }
+}
+
+/*
+ * InkParagraph (components/motion/ink-paragraph): each word's opacity comes from the paragraph's
+ * scroll progress (--ink, written by one MotionValue) and the word's index (--i). Before any script
+ * runs, and with reduced motion, --ink stays unset and every word is fully inked.
+ */
+.ink > span {
+  opacity: clamp(0.16, calc((var(--ink, 1) * var(--words) - var(--i)) * 1), 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ink > span {
+    opacity: 1;
+  }
+}
+
+/*
+ * Scroll reveals. Server-rendered markup opts in with data-reveal="up" | "fade" | "rule" | "mask"
+ * (and an optional --d delay in ms; MaskReveal sets it); one shared IntersectionObserver
+ * (components/motion/reveal-observer) sets data-revealed once, and these transitions do the rest on
+ * transform and opacity only. Never with reduced motion.
+ *
+ * Content is hidden only while <html> has the `js` class, so it stays visible without scripts.
+ * To turn reveals on, render <RevealObserver /> once and add this inline script to the layout's
+ * <head>; it sets the class before paint and removes it again if the observer hasn't started
+ * within 3s (a failed bundle, say):
+ *
+ *   <script dangerouslySetInnerHTML={{ __html: `(function(d){d.classList.add("js");setTimeout(function(){if(!d.dataset.reveals)d.classList.remove("js")},3000)})(document.documentElement)` }} />
+ */
+@media (prefers-reduced-motion: no-preference) {
+  html.js [data-reveal] {
+    transition:
+      opacity 0.9s var(--ease-out),
+      transform 0.9s var(--ease-out);
+    transition-delay: calc(var(--d, 0) * 1ms);
+  }
+
+  html.js [data-reveal="up"]:not([data-revealed]) {
+    opacity: 0;
+    transform: translateY(1.5rem);
+  }
+
+  html.js [data-reveal="fade"]:not([data-revealed]) {
+    opacity: 0;
+  }
+
+  html.js [data-reveal="rule"] {
+    transform-origin: left;
+    transition-duration: 1.2s;
+  }
+
+  html.js [data-reveal="rule"]:not([data-revealed]) {
+    transform: scaleX(0);
+  }
+
+  /* The mask itself stays put (and clips); its child rises into it. */
+  html.js [data-reveal="mask"] {
+    transition: none;
+  }
+
+  html.js [data-reveal="mask"] > * {
+    transition: transform 1.1s var(--ease-out);
+    transition-delay: calc(var(--d, 0) * 1ms);
+  }
+
+  html.js [data-reveal="mask"]:not([data-revealed]) > * {
+    transform: translateY(105%);
+  }
+}
