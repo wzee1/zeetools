@@ -1,0 +1,17 @@
+# Conventional commit titles: `type: lowercase description`.
+title=$(head -n 1 "$1")
+
+case "$title" in
+  Merge\ * | Revert\ * | fixup!* | squash!*) exit 0 ;;
+esac
+
+if ! printf '%s' "$title" | grep -Eq '^(feat|fix|refactor|docs|chore|build|ci|test|perf|style)(\([a-z0-9-]+\))?!?: [a-z].+$'; then
+  echo ""
+  echo "Commit title must look like:  type: lowercase description"
+  echo "  types: feat, fix, refactor, docs, chore, build, ci, test, perf, style"
+  echo "  e.g.   feat: add crop presets"
+  echo "         fix(header): keep logo aligned on mobile"
+  echo ""
+  echo "Got:     $title"
+  exit 1
+fi
