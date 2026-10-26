@@ -22,11 +22,12 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
+      # pnpm at the version in package.json's packageManager field. It has to come before setup-node,
+      # which sees that field and caches pnpm's store, so it needs pnpm on the PATH already.
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:
           node-version: 22
-      # pnpm at the version in package.json's packageManager field.
-      - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm run lint
       - run: pnpm run typecheck
