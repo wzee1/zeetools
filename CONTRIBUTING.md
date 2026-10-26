@@ -6,7 +6,7 @@ You need Node.js 22 or newer.
 
 ```bash
 pnpm install     # installs every workspace and sets up the git hooks
-pnpm --filter zeepass dev
+pnpm --filter zeecall dev
 ```
 
 ## Scripts
@@ -34,6 +34,6 @@ Titles look like `type: lowercase description`, with a type of `feat`, `fix`, `r
 - One component per file, as the default export. Radix-style compound primitives (dialog, select, tabs) keep their named exports.
 - Shared UI belongs in `packages/ui`. An app keeps only its own product code.
 - Inside `packages/ui`, import with relative paths: there is no `@/` alias, so the package works when installed from npm.
-- No `any`, no `console.log`, no TODO comments. zeepass never uses `Math.random`.
+- No `any`, no `console.log`, no TODO comments.
 - Icons used in command menus are Lucide components.
 - Add or update tests next to the code you change.

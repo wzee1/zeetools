@@ -1,4 +1,4 @@
-// The class strings of the one card every view is built from (the same sections as zeepass's create form).
+// The class strings of the one card every view is built from.
 
 /** The card itself, filling the free height: the flex-1 element of the no-scroll chain on desktop, with its own container for column breakpoints. `data-dragging` turns the border green. */
 export const CARD =
