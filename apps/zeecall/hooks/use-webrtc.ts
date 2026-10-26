@@ -62,35 +62,36 @@ export function useWebRtc({
   }, [localStream, screenStream, onDataChannelReady, onDataChannelClosed]);
 
   // Sync tracks to peer connection
+  // Each connection has one audio and one video slot (transceiver) from the start. Tracks are swapped in place with
+  // replaceTrack, so starting a screen share, or turning a camera on later, never needs a new negotiation.
   const syncTracksToPeerConnection = useCallback((pc: RTCPeerConnection) => {
-    const senders = pc.getSenders();
-    const tracksToSend: MediaStreamTrack[] = [];
+    // The screen's video takes the camera's place; the microphone keeps the audio slot (screen audio is not sent).
+    const video = screenStreamRef.current?.getVideoTracks()[0] ?? localStreamRef.current?.getVideoTracks()[0] ?? null;
+    const audio = localStreamRef.current?.getAudioTracks()[0] ?? null;
 
-    // Determine priority: if screen share is active, prioritize screen video
-    if (screenStreamRef.current) {
-      screenStreamRef.current.getTracks().forEach((t) => tracksToSend.push(t));
-    } else if (localStreamRef.current) {
-      localStreamRef.current.getVideoTracks().forEach((t) => tracksToSend.push(t));
-    }
-
-    // Always include microphone audio from localStream
-    if (localStreamRef.current) {
-      localStreamRef.current.getAudioTracks().forEach((t) => tracksToSend.push(t));
-    }
-
-    // Replace or add tracks
-    tracksToSend.forEach((track) => {
-      const existingSender = senders.find((s) => s.track?.kind === track.kind);
-      if (existingSender) {
-        existingSender.replaceTrack(track).catch((e) => console.warn("replaceTrack error:", e));
-      } else {
+    for (const [kind, track] of [["audio", audio], ["video", video]] as const) {
+      const transceiver = pc.getTransceivers().find((t) => t.currentDirection !== "stopped" && t.receiver.track.kind === kind);
+      if (transceiver) {
+        if (transceiver.sender.track !== track) {
+          transceiver.sender.replaceTrack(track).catch((e) => console.warn("replaceTrack error:", e));
+        }
+      } else if (track) {
         try {
           pc.addTrack(track, localStreamRef.current || new MediaStream());
         } catch {
           // ignore already added
         }
       }
-    });
+    }
+  }, []);
+
+  /** The calling side makes sure both slots exist before its offer, even without a camera or a microphone. */
+  const ensureTransceivers = useCallback((pc: RTCPeerConnection) => {
+    for (const kind of ["audio", "video"] as const) {
+      if (!pc.getTransceivers().some((t) => t.receiver.track.kind === kind)) {
+        pc.addTransceiver(kind, { direction: "sendrecv" });
+      }
+    }
   }, []);
 
   // Sync local tracks whenever localStream or screenStream changes
@@ -225,7 +226,7 @@ export function useWebRtc({
     async (peer: PeerInfo) => {
       // The same peer can be announced twice (the worker and the same-browser channel both deliver it).
       const existing = peerConnectionsRef.current.get(peer.id);
-      if (existing && existing.connectionState !== "failed" && existing.connectionState !== "closed") return;
+      if (existing && !["disconnected", "failed", "closed"].includes(existing.connectionState)) return;
       if (existing) closePeer(peer.id);
 
       const pc = createPeerConnection(peer.id, peer.name);
@@ -244,15 +245,13 @@ export function useWebRtc({
         console.warn("Failed to create data channel:", err);
       }
 
-      const offer = await pc.createOffer({
-        offerToReceiveAudio: true,
-        offerToReceiveVideo: true,
-      });
+      ensureTransceivers(pc);
+      const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
       signalingRef.current?.sendOffer(peer.id, offer);
     },
-    [createPeerConnection, closePeer]
+    [createPeerConnection, closePeer, ensureTransceivers]
   );
 
   // Join Room
@@ -311,6 +310,13 @@ export function useWebRtc({
           await pc.setRemoteDescription(new RTCSessionDescription(sdp));
           await drainCandidateQueue(from, pc);
 
+          // Slots the offer created for kinds we had no track for start receive-only; open them both ways, so a
+          // camera or screen share added later only needs replaceTrack.
+          pc.getTransceivers().forEach((t) => {
+            if (t.direction === "recvonly") t.direction = "sendrecv";
+          });
+          syncTracksToPeerConnection(pc);
+
           const answer = await pc.createAnswer();
           await pc.setLocalDescription(answer);
 
@@ -344,7 +350,7 @@ export function useWebRtc({
       signalingRef.current = signaling;
       signaling.connect(room, peer);
     },
-    [createPeerConnection, drainCandidateQueue, initiateCallToPeer, closePeer]
+    [createPeerConnection, drainCandidateQueue, initiateCallToPeer, closePeer, syncTracksToPeerConnection]
   );
 
   // Leave Room & teardown
@@ -386,6 +392,13 @@ export function useWebRtc({
 
     return () => clearInterval(interval);
   }, [remotePeers]);
+
+  // A tab that reloads or closes says goodbye first, so the others drop its connection and take its next join fresh
+  useEffect(() => {
+    const onPageHide = () => leaveRoom();
+    window.addEventListener("pagehide", onPageHide);
+    return () => window.removeEventListener("pagehide", onPageHide);
+  }, [leaveRoom]);
 
   // Teardown on unmount
   useEffect(() => {

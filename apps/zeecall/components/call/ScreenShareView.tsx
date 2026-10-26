@@ -1,61 +1,43 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { MonitorX } from "lucide-react";
-import VideoTile from "./VideoTile";
+import { useStreamElement } from "@/hooks/use-stream-element";
 
 export interface ScreenShareViewProps {
+  /** The shared screen: our own capture, or the presenter's stream when a peer shares. */
   screenStream: MediaStream;
-  localCameraStream: MediaStream | null;
   presenterName: string;
+  /** Our own share: the preview stays muted (no echo of the captured audio) and gets the stop button. */
   isLocalSharing: boolean;
-  onStopScreenShare: () => void;
-  localName: string;
-  isAudioMuted: boolean;
-  isVideoOff: boolean;
-  micLevel: number;
+  onStopScreenShare?: () => void;
+  /** The speaker a peer's share plays on (their voice comes with it). */
+  audioOutput?: string;
+  /** Overlaid in the corner, such as our own camera while we share. */
+  pip?: React.ReactNode;
 }
 
-export default function ScreenShareView({
-  screenStream,
-  localCameraStream,
-  presenterName,
-  isLocalSharing,
-  onStopScreenShare,
-  localName,
-  isAudioMuted,
-  isVideoOff,
-  micLevel,
-}: ScreenShareViewProps) {
+/** A shared screen, whole (contained, never cropped), with the presenter chip on top. */
+export default function ScreenShareView({ screenStream, presenterName, isLocalSharing, onStopScreenShare, audioOutput, pip }: ScreenShareViewProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-
-  useEffect(() => {
-    if (videoRef.current && screenStream) {
-      videoRef.current.srcObject = screenStream;
-    }
-  }, [screenStream]);
+  useStreamElement(videoRef, screenStream, { playsAudio: !isLocalSharing, audioOutput });
 
   return (
-    <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-control border border-border bg-black shell:aspect-auto shell:min-h-0 shell:flex-1">
+    <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-control border border-border bg-black shell:aspect-auto shell:min-h-0 shell:min-w-0 shell:flex-1">
       {/* 4K Screen Share Canvas */}
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        className="size-full object-contain"
-      />
+      <video ref={videoRef} autoPlay playsInline muted={isLocalSharing} className="size-full object-contain" />
 
       {/* Floating presenter chip. Fixed light-on-dark colours: it sits on the shared screen, not on the page theme. */}
-      <div className="absolute top-4 left-4 z-20 flex items-center gap-2 rounded-control border border-white/15 bg-black/60 px-3 py-1.5 text-xs text-white backdrop-blur-md">
+      <div className="absolute top-3 left-3 z-20 flex max-w-[calc(100%-1.5rem)] items-center gap-2 rounded-control border border-white/15 bg-black/60 px-3 py-1.5 text-xs text-white backdrop-blur-md sm:top-4 sm:left-4">
         <span className="size-2 rounded-full bg-[#5dbb8a]" />
-        <span className="font-medium">
+        <span className="truncate font-medium">
           {presenterName}’s 4K Screen Share
         </span>
-        {isLocalSharing && (
+        {isLocalSharing && onStopScreenShare && (
           <button
             type="button"
             onClick={onStopScreenShare}
-            className="ml-2 flex items-center gap-1 text-[11px] font-semibold text-red-400 hover:text-red-300 transition-colors duration-200 ease-out cursor-pointer"
+            className="ml-2 flex shrink-0 items-center gap-1 text-[11px] font-semibold text-red-400 hover:text-red-300 transition-colors duration-200 ease-out cursor-pointer"
           >
             <MonitorX className="size-3.5" />
             <span>Stop Sharing</span>
@@ -64,18 +46,7 @@ export default function ScreenShareView({
       </div>
 
       {/* Floating Webcam Picture-In-Picture (PIP) */}
-      {localCameraStream && (
-        <div className="absolute right-5 bottom-5 z-20 flex aspect-video w-48 overflow-hidden rounded-control sm:w-64">
-          <VideoTile
-            stream={localCameraStream}
-            name={localName}
-            isLocal
-            isAudioMuted={isAudioMuted}
-            isVideoOff={isVideoOff}
-            speakingLevel={micLevel}
-          />
-        </div>
-      )}
+      {pip && <div className="absolute right-3 bottom-3 z-20 flex aspect-video w-[30%] max-w-64 min-w-24 overflow-hidden rounded-control sm:right-5 sm:bottom-5">{pip}</div>}
     </div>
   );
 }

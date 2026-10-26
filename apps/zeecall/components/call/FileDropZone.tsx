@@ -8,6 +8,8 @@ import Button from "@zeetools/ui/components/ui/actions/button";
 import Kbd from "@zeetools/ui/components/ui/display/kbd";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@zeetools/ui/components/ui/overlays/dialog";
 import Progress from "@zeetools/ui/components/ui/feedback/progress";
+import type { ReceivedFileState } from "@/hooks/use-data-channel";
+import { formatBytes } from "@/lib/format";
 import { FileTransferProgress } from "@/lib/webrtc/file-transfer";
 
 export interface FileDropZoneProps {
@@ -15,13 +17,18 @@ export interface FileDropZoneProps {
   onClose: () => void;
   onSendFile: (file: File) => void;
   transfers: FileTransferProgress[];
+  /** What happened to each received file (it waits for Save or Discard). */
+  receivedFiles: Record<string, ReceivedFileState>;
 }
+
+const RECEIVED_LABEL: Record<ReceivedFileState, string> = { pending: "Waiting", saved: "Saved", discarded: "Discarded" };
 
 export default function FileDropZone({
   isOpen,
   onClose,
   onSendFile,
   transfers,
+  receivedFiles,
 }: FileDropZoneProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -49,14 +56,6 @@ export default function FileDropZone({
       Array.from(e.target.files).forEach((file) => onSendFile(file));
       e.target.value = "";
     }
-  };
-
-  const formatBytes = (bytes: number) => {
-    if (bytes === 0) return "0 B";
-    const k = 1024;
-    const sizes = ["B", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
   };
 
   const formatSpeed = (bytesPerSec: number) => {
@@ -150,7 +149,11 @@ export default function FileDropZone({
                         )}
                       </span>
                       <span>
-                        {t.status === "completed" ? "Saved" : formatSpeed(t.speedBytesPerSec)}
+                        {t.status !== "completed"
+                          ? formatSpeed(t.speedBytesPerSec)
+                          : t.direction === "receive"
+                            ? RECEIVED_LABEL[receivedFiles[t.fileId] ?? "pending"]
+                            : "Sent"}
                       </span>
                     </div>
                   </li>

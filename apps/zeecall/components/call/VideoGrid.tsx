@@ -21,6 +21,8 @@ export interface VideoGridProps {
   micLevel: number;
   /** The speaker remote audio plays on. */
   audioOutput: string;
+  /** Peers that are sharing their screen right now (they say so over the data channel). */
+  sharingPeerIds: string[];
   onStopScreenShare: () => void;
   roomUrl: string;
   inviteCopied: boolean;
@@ -29,6 +31,9 @@ export interface VideoGridProps {
 
 /** Tiles stack on phones (16:9 each); on desktop they split the free height of the card. */
 const TILE = "aspect-video shell:aspect-auto";
+
+/** A tile in the strip beside a shared screen: always 16:9. */
+const STRIP_TILE = "aspect-video shrink-0";
 
 /** The area under the header row: the card's flex-1 surface while in a call. */
 export default function VideoGrid({
@@ -41,6 +46,7 @@ export default function VideoGrid({
   isScreenSharing,
   micLevel,
   audioOutput,
+  sharingPeerIds,
   onStopScreenShare,
   roomUrl,
   inviteCopied,
@@ -61,21 +67,58 @@ export default function VideoGrid({
     />
   );
 
-  // If local or remote peer is sharing screen
-  if (isScreenSharing && screenStream) {
+  const remoteTile = (peer: RemotePeerState, className = TILE) => (
+    <VideoTile
+      key={peer.id}
+      stream={peer.stream}
+      name={peer.name}
+      isAudioMuted={peer.isAudioMuted}
+      isVideoOff={peer.isVideoOff}
+      audioOutput={audioOutput}
+      className={className}
+    />
+  );
+
+  // A screen is being shared, by us or by a peer: the screen takes the space, whole, and everyone else sits in a
+  // strip beside it (below on phones), so their voices keep playing. A peer's share carries their voice itself.
+  const presenter = isScreenSharing && screenStream ? null : remotePeers.find((p) => sharingPeerIds.includes(p.id));
+  if ((isScreenSharing && screenStream) || presenter) {
+    const strip = presenter
+      ? [
+          <VideoTile
+            key="local"
+            stream={localStream}
+            name={localName}
+            isLocal
+            isAudioMuted={isAudioMuted}
+            isVideoOff={isVideoOff}
+            speakingLevel={micLevel}
+            className={STRIP_TILE}
+          />,
+          ...remotePeers.filter((p) => p.id !== presenter.id).map((p) => remoteTile(p, STRIP_TILE)),
+        ]
+      : remotePeers.map((p) => remoteTile(p, STRIP_TILE));
+
     return (
-      <div className={surface}>
-        <ScreenShareView
-          screenStream={screenStream}
-          localCameraStream={localStream}
-          presenterName={localName}
-          isLocalSharing={true}
-          onStopScreenShare={onStopScreenShare}
-          localName={localName}
-          isAudioMuted={isAudioMuted}
-          isVideoOff={isVideoOff}
-          micLevel={micLevel}
-        />
+      <div className={cn(surface, "shell:flex-row")}>
+        {presenter ? (
+          <ScreenShareView screenStream={presenter.stream} presenterName={presenter.name} isLocalSharing={false} audioOutput={audioOutput} />
+        ) : (
+          <ScreenShareView
+            screenStream={screenStream!}
+            presenterName={localName}
+            isLocalSharing
+            onStopScreenShare={onStopScreenShare}
+            pip={
+              localStream && (
+                <VideoTile stream={localStream} name={localName} isLocal isAudioMuted={isAudioMuted} isVideoOff={isVideoOff} speakingLevel={micLevel} />
+              )
+            }
+          />
+        )}
+        {strip.length > 0 && (
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 shell:flex shell:w-64 shell:shrink-0 shell:flex-col shell:overflow-y-auto">{strip}</div>
+        )}
       </div>
     );
   }
@@ -138,14 +181,7 @@ export default function VideoGrid({
     return (
       <div className={cn(surface, "sm:grid sm:grid-cols-2 shell:grid-rows-[minmax(0,1fr)]")}>
         {localTile}
-        <VideoTile
-          stream={peer.stream}
-          name={peer.name}
-          isAudioMuted={peer.isAudioMuted}
-          isVideoOff={peer.isVideoOff}
-          audioOutput={audioOutput}
-          className={TILE}
-        />
+        {remoteTile(peer)}
       </div>
     );
   }
@@ -154,17 +190,7 @@ export default function VideoGrid({
   return (
     <div className={cn(surface, "sm:grid sm:grid-cols-2 shell:grid-rows-[repeat(2,minmax(0,1fr))]")}>
       {localTile}
-      {remotePeers.map((peer) => (
-        <VideoTile
-          key={peer.id}
-          stream={peer.stream}
-          name={peer.name}
-          isAudioMuted={peer.isAudioMuted}
-          isVideoOff={peer.isVideoOff}
-          audioOutput={audioOutput}
-          className={TILE}
-        />
-      ))}
+      {remotePeers.map((peer) => remoteTile(peer))}
     </div>
   );
 }

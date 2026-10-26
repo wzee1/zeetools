@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Maximize2, Minimize2 } from "lucide-react";
 import MicIcon from "@zeetools/ui/components/icons/media/mic-icon";
 import { cn } from "@zeetools/ui/lib/utils";
 import { useAudioLevel } from "@/hooks/use-audio-level";
-
-/** `setSinkId` picks the speaker a media element plays on; not every browser has it. */
-type SinkElement = HTMLVideoElement & { setSinkId?: (sinkId: string) => Promise<void> };
+import { useStreamElement } from "@/hooks/use-stream-element";
 
 export interface VideoTileProps {
   stream: MediaStream | null;
@@ -38,31 +36,7 @@ export default function VideoTile({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !stream) return;
-    video.srcObject = stream;
-    if (isLocal) return;
-    // A browser may refuse to autoplay the remote audio until the page gets a click; start it on the next one.
-    const retry = () => {
-      video.play().catch(() => {});
-    };
-    video.play().catch(() => {
-      window.addEventListener("pointerdown", retry, { once: true });
-      window.addEventListener("keydown", retry, { once: true });
-    });
-    return () => {
-      window.removeEventListener("pointerdown", retry);
-      window.removeEventListener("keydown", retry);
-    };
-  }, [stream, isLocal]);
-
-  // Applies the chosen speaker to the remote audio; the local tile is muted, so it has nothing to route.
-  useEffect(() => {
-    const video = videoRef.current as SinkElement | null;
-    if (isLocal || !video?.setSinkId || !audioOutput) return;
-    video.setSinkId(audioOutput).catch(() => {});
-  }, [isLocal, audioOutput]);
+  useStreamElement(videoRef, stream, { playsAudio: !isLocal, audioOutput });
 
   const remoteLevel = useAudioLevel(isLocal ? null : stream);
   const level = isLocal ? speakingLevel : remoteLevel;

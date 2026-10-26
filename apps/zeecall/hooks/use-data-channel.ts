@@ -18,6 +18,9 @@ interface NotesSyncPayload {
   senderName: string;
 }
 
+/** What happened to a file a peer sent: it waits in memory until the user saves or discards it. */
+export type ReceivedFileState = "pending" | "saved" | "discarded";
+
 export interface UseDataChannelOptions {
   localPeerName: string;
   roomName: string;
@@ -30,10 +33,18 @@ export function useDataChannel({ localPeerName, roomName }: UseDataChannelOption
   const [activeTransfers, setActiveTransfers] = useState<FileTransferProgress[]>([]);
   const [notes, setNotes] = useState<string>("# Meeting Scratchpad\n\n- Quick sync notes...\n- Action items:\n  - [ ] ");
   const [lastNotesUpdatedAt, setLastNotesUpdatedAt] = useState<number>(0);
+  const [receivedFiles, setReceivedFiles] = useState<Record<string, ReceivedFileState>>({});
+  // Peers sharing their screen; a share replaces their camera track, so the receiver has to be told.
+  const [sharingPeerIds, setSharingPeerIds] = useState<string[]>([]);
+  const localSharingRef = useRef(false);
 
   // Register channel
   const registerDataChannel = useCallback((peerId: string, channel: RTCDataChannel) => {
     channelsRef.current.set(peerId, channel);
+    // A peer that connects while we share learns it straight away.
+    if (localSharingRef.current && channel.readyState === "open") {
+      channel.send(JSON.stringify({ type: "screen-share", active: true }));
+    }
 
     channel.onmessage = (event) => {
       if (typeof event.data === "string") {
@@ -58,6 +69,9 @@ export function useDataChannel({ localPeerName, roomName }: UseDataChannelOption
                 },
               ];
             });
+          } else if (parsed.type === "screen-share") {
+            const active = parsed.active === true;
+            setSharingPeerIds((prev) => (active ? [...prev.filter((id) => id !== peerId), peerId] : prev.filter((id) => id !== peerId)));
           } else if (parsed.type === "notes-sync") {
             const sync = parsed as NotesSyncPayload;
             setNotes((prevNotes) => {
@@ -87,8 +101,9 @@ export function useDataChannel({ localPeerName, roomName }: UseDataChannelOption
               next.push(completeProgress);
               return next;
             });
+            // Nothing is written to disk until the user says so (see saveFile / discardFile).
             if (completeProgress.blobUrl) {
-              triggerFileDownload(completeProgress.blobUrl, completeProgress.fileName);
+              setReceivedFiles((prev) => ({ ...prev, [completeProgress.fileId]: "pending" }));
             }
           }
         );
@@ -107,6 +122,35 @@ export function useDataChannel({ localPeerName, roomName }: UseDataChannelOption
       }
     }
     channelsRef.current.delete(peerId);
+    setSharingPeerIds((prev) => prev.filter((id) => id !== peerId));
+  }, []);
+
+  // Tell every peer whether we are sharing our screen now
+  const announceScreenShare = useCallback((active: boolean) => {
+    localSharingRef.current = active;
+    const msg = JSON.stringify({ type: "screen-share", active });
+    channelsRef.current.forEach((ch) => {
+      if (ch.readyState === "open") {
+        try {
+          ch.send(msg);
+        } catch {
+          // ignore
+        }
+      }
+    });
+  }, []);
+
+  // Save a received file to disk, after the user agreed
+  const saveFile = useCallback((transfer: FileTransferProgress) => {
+    if (!transfer.blobUrl) return;
+    triggerFileDownload(transfer.blobUrl, transfer.fileName);
+    setReceivedFiles((prev) => ({ ...prev, [transfer.fileId]: "saved" }));
+  }, []);
+
+  // Drop a received file without saving it
+  const discardFile = useCallback((transfer: FileTransferProgress) => {
+    if (transfer.blobUrl) URL.revokeObjectURL(transfer.blobUrl);
+    setReceivedFiles((prev) => ({ ...prev, [transfer.fileId]: "discarded" }));
   }, []);
 
   // Send File to all peers
@@ -262,6 +306,11 @@ export function useDataChannel({ localPeerName, roomName }: UseDataChannelOption
     exportNotesAsMarkdown,
     activeTransfers,
     sendFile,
+    receivedFiles,
+    saveFile,
+    discardFile,
+    sharingPeerIds,
+    announceScreenShare,
     registerDataChannel,
     unregisterDataChannel,
   };

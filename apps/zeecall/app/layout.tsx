@@ -10,6 +10,7 @@ import { appUrl, zee } from "@/zee.config";
 import { shellBootScript, shellKey } from "@zeetools/ui/lib/shell";
 import { cn } from "@zeetools/ui/lib/utils";
 import CallStatusProvider from "@/components/shared/CallStatusProvider";
+import RoomHistory from "@/components/shared/RoomHistory";
 import RoomNav from "@/components/shared/RoomNav";
 import "./globals.css";
 
@@ -61,11 +62,11 @@ export default function RootLayout({
           <CallStatusProvider>
             {/* The app shell: a sidebar on the base and one inset panel holding the tool. On wide screens
                 the shell is exactly the viewport, so the page itself never scrolls; phones keep the top bar.
-                Rooms live in the URL hash and nothing is stored, so the sidebar has the room rows and no history group. */}
+                Rooms live in the URL hash; the group lists the rooms this browser opened (localStorage). */}
             <div className="flex min-h-screen shell:h-screen shell:overflow-hidden">
-              <ZeeSidebar nav={<RoomNav />} />
+              <ZeeSidebar nav={<RoomNav />} group={<RoomHistory />} />
               <div className="flex min-w-0 flex-1 flex-col">
-                <ZeeMobileBar nav={<RoomNav />} />
+                <ZeeMobileBar nav={<RoomNav />} group={<RoomHistory />} />
                 <div className="flex flex-1 flex-col px-2 sm:px-3 shell:min-h-0 shell:py-2 shell:pr-2 shell:pl-0">
                   <div
                     data-enter="panel"

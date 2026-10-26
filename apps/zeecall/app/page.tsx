@@ -7,16 +7,20 @@ import { useWebRtc } from "@/hooks/use-webrtc";
 import { useDataChannel } from "@/hooks/use-data-channel";
 import { useKeyboardControls } from "@/hooks/use-keyboard-controls";
 import { useSessionValue } from "@/hooks/use-session-value";
-import { usePublishCallSeconds } from "@/hooks/use-call-status";
+import { usePublishCallStatus } from "@/hooks/use-call-status";
 import { useCopyInvite } from "@/hooks/use-copy-invite";
 import { useDialogAtEscape } from "@/hooks/use-dialog-at-escape";
 import { useHashRoom } from "@/hooks/use-hash-room";
+import { useRoomHistory } from "@/hooks/use-room-history";
 import { useWindowFileDrop } from "@/hooks/use-window-file-drop";
 import { cn } from "@zeetools/ui/lib/utils";
 import { generateRoomSlug, randomId } from "@/lib/room";
 import CreateRoomView from "@/components/views/CreateRoomView";
 import LobbyView from "@/components/views/LobbyView";
 import InCallView from "@/components/views/InCallView";
+import ConfirmDialog from "@/components/call/ConfirmDialog";
+import IncomingFileDialog from "@/components/call/IncomingFileDialog";
+import PeerAudio from "@/components/call/PeerAudio";
 
 // Same curve out as in: the incoming view staggers itself in (see Stagger in @zeetools/ui).
 const exit = { opacity: 0, y: -6, transition: { duration: 0.2, ease: [0.32, 0.72, 0, 1] as const } };
@@ -31,10 +35,13 @@ export default function ZeeCallPage() {
     "Anonymous",
     false
   );
-  // The room this tab joined; the call is only on while the URL still names it.
+  // The room this tab's call is live in. The call keeps running while another room or the create view is open;
+  // the call view shows only while the URL names this room.
   const [joinedRoom, setJoinedRoom] = useState<string>("");
   const inCall = roomName !== "" && joinedRoom === roomName;
-  if (joinedRoom !== "" && joinedRoom !== roomName) setJoinedRoom("");
+  // Asks before something ends the call: Esc in the call, or joining another room while one is live.
+  const [confirm, setConfirm] = useState<"leave" | "switch" | null>(null);
+  const { remember } = useRoomHistory();
 
   // Modals & Overlays
   const [isFileDropOpen, setIsFileDropOpen] = useState(false);
@@ -89,6 +96,11 @@ export default function ZeeCallPage() {
     exportNotesAsMarkdown,
     activeTransfers,
     sendFile,
+    receivedFiles,
+    saveFile,
+    discardFile,
+    sharingPeerIds,
+    announceScreenShare,
     registerDataChannel,
     unregisterDataChannel,
   } = useDataChannel({
@@ -106,31 +118,38 @@ export default function ZeeCallPage() {
     }
   }, [roomName, inCall, localStream, startMedia]);
 
-  // The sidebar, the brand link and Back can all take the room out of the URL: a live call or camera must not
-  // keep running behind the create view, so this does what the Leave button does (both calls are idempotent).
+  // Every room opened here is listed in the sidebar ("On this device"), so it is one click away later.
+  useEffect(() => {
+    if (roomName) remember(roomName);
+  }, [roomName, remember]);
+
+  // Leaving a lobby for the create view turns its camera preview off. A live call keeps running in the background
+  // (its row in the sidebar shows the timer); only Leave ends it.
   const previousRoomRef = useRef(roomName);
   useEffect(() => {
     const previous = previousRoomRef.current;
     previousRoomRef.current = roomName;
-    if (previous !== "" && previous !== roomName) {
-      leaveRoom();
-      stopAll();
-    }
-  }, [roomName, leaveRoom, stopAll]);
+    if (previous !== "" && roomName === "" && !joinedRoom) stopAll();
+  }, [roomName, joinedRoom, stopAll]);
 
-  // Call duration counter
+  // Peers are told when we share our screen, so they show it whole instead of as a cropped camera tile.
   useEffect(() => {
-    if (!inCall) return;
+    announceScreenShare(isScreenSharing);
+  }, [isScreenSharing, announceScreenShare]);
+
+  // Call duration counter (runs while the call is live, on screen or not)
+  useEffect(() => {
+    if (!joinedRoom) return;
 
     const timer = setInterval(() => {
       setCallDuration((prev) => prev + 1);
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [inCall]);
+  }, [joinedRoom]);
 
-  // The sidebar shows the elapsed time on the room row (a number only; nothing is stored).
-  usePublishCallSeconds(inCall ? callDuration : null);
+  // The sidebar marks the live room with the elapsed time.
+  usePublishCallStatus(joinedRoom || null, callDuration);
 
   // Create room action
   const handleCreateRoom = (e?: React.FormEvent) => {
@@ -142,8 +161,7 @@ export default function ZeeCallPage() {
   };
 
   // Join Call action
-  const handleJoinCall = () => {
-    if (!roomName) return;
+  const joinCall = () => {
     setJoinedRoom(roomName);
     setCallDuration(0);
     setIsFileDropOpen(false);
@@ -156,8 +174,22 @@ export default function ZeeCallPage() {
     });
   };
 
+  // One call at a time: joining another room while a call is live asks first.
+  const handleJoinCall = () => {
+    if (!roomName) return;
+    if (joinedRoom && joinedRoom !== roomName) setConfirm("switch");
+    else joinCall();
+  };
+
+  const confirmSwitch = () => {
+    setConfirm(null);
+    leaveRoom();
+    joinCall();
+  };
+
   // Leave Call action
   const handleLeaveCall = useCallback(() => {
+    setConfirm(null);
     leaveRoom();
     stopAll();
     setJoinedRoom("");
@@ -209,7 +241,7 @@ export default function ZeeCallPage() {
       if (isFileDropOpen) setIsFileDropOpen(false);
       else if (isNotesOpen) setIsNotesOpen(false);
       else if (isSettingsOpen) setIsSettingsOpen(false);
-      else if (!dialogAtEscapeRef.current) handleLeaveCall();
+      else if (!dialogAtEscapeRef.current) setConfirm("leave");
     },
   });
 
@@ -238,6 +270,11 @@ export default function ZeeCallPage() {
   };
 
   const view = !roomName ? "create" : inCall ? "call" : "lobby";
+
+  // A received file waits in memory until the user saves or discards it.
+  const pendingFile =
+    activeTransfers.find((t) => t.direction === "receive" && t.status === "completed" && receivedFiles[t.fileId] === "pending") ?? null;
+  const pendingSender = remotePeers.find((p) => p.id === pendingFile?.peerId)?.name ?? "Peer";
 
   return (
     <main
@@ -290,6 +327,7 @@ export default function ZeeCallPage() {
                 isScreenSharing,
                 micLevel,
                 audioOutput: selectedAudioOutput,
+                sharingPeerIds,
                 onStopScreenShare: stopScreenShare,
                 roomUrl: roomInviteUrl,
                 inviteCopied,
@@ -315,6 +353,7 @@ export default function ZeeCallPage() {
                 onClose: () => setIsFileDropOpen(false),
                 onSendFile: sendFile,
                 transfers: activeTransfers,
+                receivedFiles,
               }}
               notes={{
                 isOpen: isNotesOpen,
@@ -337,6 +376,28 @@ export default function ZeeCallPage() {
           )}
         </motion.div>
       </AnimatePresence>
+
+      {/* Away from the call view the tiles are gone, so the peers' voices play from here. */}
+      {joinedRoom && view !== "call" && remotePeers.map((peer) => <PeerAudio key={peer.id} stream={peer.stream} audioOutput={selectedAudioOutput} />)}
+
+      <IncomingFileDialog file={pendingFile} senderName={pendingSender} onSave={saveFile} onDiscard={discardFile} />
+
+      <ConfirmDialog
+        open={confirm === "leave"}
+        title="Leave the call?"
+        description={<>You will disconnect from Room #{joinedRoom}.</>}
+        confirmLabel="Leave Call"
+        onConfirm={handleLeaveCall}
+        onCancel={() => setConfirm(null)}
+      />
+      <ConfirmDialog
+        open={confirm === "switch"}
+        title="Leave the current call?"
+        description={<>You are in a call in Room #{joinedRoom}. Joining Room #{roomName} ends it.</>}
+        confirmLabel={`Join Call #${roomName}`}
+        onConfirm={confirmSwitch}
+        onCancel={() => setConfirm(null)}
+      />
     </main>
   );
 }

@@ -2,23 +2,29 @@
 
 import { createContext, useContext, useEffect } from "react";
 
+export interface CallStatus {
+  /** The room the live call is in. */
+  room: string;
+  /** Seconds since the call was joined. */
+  seconds: number;
+}
+
 interface CallStatusValue {
-  /** Seconds since the call was joined, or null outside a call. */
-  seconds: number | null;
-  setSeconds: (seconds: number | null) => void;
+  status: CallStatus | null;
+  setStatus: (status: CallStatus | null) => void;
 }
 
-/** How long the call has run, so the sidebar can show it. A number only: nothing about the call is stored. */
-export const CallStatusContext = createContext<CallStatusValue>({ seconds: null, setSeconds: () => {} });
+/** Which room the call is live in and for how long, so the sidebar can mark it. Nothing about the call is stored. */
+export const CallStatusContext = createContext<CallStatusValue>({ status: null, setStatus: () => {} });
 
-export function useCallSeconds(): number | null {
-  return useContext(CallStatusContext).seconds;
+export function useCallStatus(): CallStatus | null {
+  return useContext(CallStatusContext).status;
 }
 
-/** The page calls this with the elapsed seconds (null outside a call); the sidebar reads it back with `useCallSeconds`. */
-export function usePublishCallSeconds(seconds: number | null): void {
-  const { setSeconds } = useContext(CallStatusContext);
+/** The page calls this with the live call's room and elapsed seconds (null outside a call); the sidebar reads it with `useCallStatus`. */
+export function usePublishCallStatus(room: string | null, seconds: number): void {
+  const { setStatus } = useContext(CallStatusContext);
   useEffect(() => {
-    setSeconds(seconds);
-  }, [seconds, setSeconds]);
+    setStatus(room ? { room, seconds } : null);
+  }, [room, seconds, setStatus]);
 }
