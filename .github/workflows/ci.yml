@@ -29,6 +29,9 @@ jobs:
         with:
           node-version: 22
       - run: pnpm install --frozen-lockfile
+      # The Cypress binary lives outside node_modules (~/.cache/Cypress), and an install from the cached
+      # pnpm store skips the script that downloads it, so fetch it here (a no-op when it's already there).
+      - run: pnpm --filter @zeetools/ui exec cypress install
       - run: pnpm run lint
       - run: pnpm run typecheck
       - run: pnpm test
