@@ -13,7 +13,7 @@ Video calls, screen sharing and file transfer straight between browsers, with no
 
 ### What the server sees
 
-To connect two browsers, a small Cloudflare Worker (`worker/signaling-worker.ts`) forwards the handshake messages (session descriptions and network candidates) between the peers in a room. It keeps them in memory only, logs nothing and stores nothing, and forgets a room when its sockets close. The room id lives in the URL fragment (`#room=...`), which browsers do not send to servers. A public STUN server is asked for the browser's public address, as WebRTC needs. TURN credentials, if you add your own, are kept in `localStorage`; the session peer id and display name live in `sessionStorage` and are cleared when the tab closes.
+To connect two browsers, a small Cloudflare Worker (`worker/signaling-worker.ts`) forwards the handshake messages (session descriptions and network candidates) between the peers in a room. It keeps them in memory only, logs nothing and stores nothing, and forgets a room when its sockets close. In the page URL the room id lives in the fragment (`#room=...`), which browsers do not send to the site's server. To join a room, though, the browser does send the room id, its peer id and your display name to the signaling worker, in the WebSocket connection URL. The worker uses them only to pair the peers, but Cloudflare's own request logs for the worker may record that URL. A public STUN server is asked for the browser's public address, as WebRTC needs. TURN credentials, if you add your own, are kept in `localStorage`; the session peer id and display name live in `sessionStorage` and are cleared when the tab closes.
 
 ## Run it
 
