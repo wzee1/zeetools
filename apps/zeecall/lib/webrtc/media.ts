@@ -4,20 +4,26 @@ export interface MediaDeviceSummary {
   kind: MediaDeviceKind;
 }
 
+/** The largest screen capture sent: 4K. */
+export const SCREEN_MAX = { width: 3840, height: 2160 };
+
 /**
  * 4K High-Frame Screen Sharing Engine.
  * Optimized for developer code reviews and video agency color/pacing reviews
- * with native 4K display resolution and crisp system audio pass-through.
+ * with native display resolution (up to 4K) and crisp system audio pass-through.
+ *
+ * Only the frame rate is constrained at capture: a width/height target makes Chrome scale the capture to that
+ * box, so a 1080p screen (most Windows monitors) was upscaled to 3840x2160 and encoded at four times its pixels,
+ * which turned choppy and blurry. The screen is captured at its own size and only scaled down above 4K.
+ * `contentHint = "detail"` tells the encoder it is text and UI, so it keeps resolution over frame rate.
  */
 export async function getHighDefScreenStream(): Promise<MediaStream> {
   if (typeof navigator === "undefined" || !navigator.mediaDevices?.getDisplayMedia) {
     throw new Error("Screen sharing is not supported in this environment");
   }
 
-  return await navigator.mediaDevices.getDisplayMedia({
+  const stream = await navigator.mediaDevices.getDisplayMedia({
     video: {
-      width: { ideal: 3840, max: 3840 },
-      height: { ideal: 2160, max: 2160 },
       frameRate: { ideal: 60, max: 60 },
     },
     audio: {
@@ -26,6 +32,18 @@ export async function getHighDefScreenStream(): Promise<MediaStream> {
       autoGainControl: false,
     },
   });
+
+  const track = stream.getVideoTracks()[0];
+  if (track) {
+    track.contentHint = "detail";
+    const { width = 0, height = 0 } = track.getSettings();
+    if (width > SCREEN_MAX.width || height > SCREEN_MAX.height) {
+      await track
+        .applyConstraints({ width: { max: SCREEN_MAX.width }, height: { max: SCREEN_MAX.height }, frameRate: { ideal: 60, max: 60 } })
+        .catch(() => {});
+    }
+  }
+  return stream;
 }
 
 /**

@@ -6,6 +6,20 @@ import { samplePeerStats, ConnectionQualityStats } from "@/lib/webrtc/stats";
 import { SignalingClient, SignalingStatus } from "@/lib/signaling/client";
 import { PeerInfo } from "@/lib/signaling/types";
 
+/** Bitrate cap while a screen is shared: enough for sharp text at 1080p–4K on a good link. */
+const SCREEN_MAX_BITRATE = 6_000_000;
+
+// Screen share: keep the resolution (text must stay sharp) and allow a higher bitrate; the camera goes back to the
+// browser's defaults. Not every browser takes every field, so a refusal leaves the defaults in place.
+function tuneVideoSender(sender: RTCRtpSender, isScreen: boolean) {
+  const params = sender.getParameters() as RTCRtpSendParameters & { degradationPreference?: string };
+  if (!params.encodings?.length) params.encodings = [{}];
+  params.degradationPreference = isScreen ? "maintain-resolution" : "balanced";
+  if (isScreen) params.encodings[0].maxBitrate = SCREEN_MAX_BITRATE;
+  else delete params.encodings[0].maxBitrate;
+  sender.setParameters(params).catch(() => {});
+}
+
 export interface RemotePeerState {
   id: string;
   name: string;
@@ -73,7 +87,10 @@ export function useWebRtc({
       const transceiver = pc.getTransceivers().find((t) => t.currentDirection !== "stopped" && t.receiver.track.kind === kind);
       if (transceiver) {
         if (transceiver.sender.track !== track) {
-          transceiver.sender.replaceTrack(track).catch((e) => console.warn("replaceTrack error:", e));
+          transceiver.sender
+            .replaceTrack(track)
+            .then(() => kind === "video" && tuneVideoSender(transceiver.sender, track !== null && track === screenStreamRef.current?.getVideoTracks()[0]))
+            .catch((e) => console.warn("replaceTrack error:", e));
         }
       } else if (track) {
         try {
