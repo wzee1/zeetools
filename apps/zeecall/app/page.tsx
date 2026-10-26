@@ -276,7 +276,8 @@ export default function ZeeCallPage() {
           {view === "call" && (
             <InCallView
               roomName={roomName}
-              stats={overallStats}
+              // The last sample stays behind when everyone else leaves; alone, the tag shows the signaling state again.
+              stats={remotePeers.length > 0 ? overallStats : { ...overallStats, connectionMode: "unknown", rttMs: 0, packetLossPercent: 0 }}
               signalingStatus={signalingStatus}
               isDragging={isDraggingFiles}
               grid={{

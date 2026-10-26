@@ -33,6 +33,15 @@ pnpm --filter zeecall build     # static export into apps/zeecall/out
 
 The app is a static export (`output: "export"`); the signaling worker is deployed separately.
 
+The signaling worker keeps each room in a Durable Object (a plain Worker cannot pass messages between two requests' sockets). To run it next to the dev server, from `apps/zeecall`:
+
+```bash
+npx wrangler dev -c worker/wrangler.jsonc
+NEXT_PUBLIC_SIGNALING_URL=ws://localhost:8787 pnpm --filter zeecall dev
+```
+
+Deploy it with `npx wrangler deploy -c worker/wrangler.jsonc` and route `signaling.wzee.dev` to it. Without a reachable worker, tabs of the same browser still find each other through a `BroadcastChannel` ("Local Mesh").
+
 ## Where things are
 
 - `app/page.tsx`: the home, lobby and in-call states.

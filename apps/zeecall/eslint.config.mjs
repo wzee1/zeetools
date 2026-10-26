@@ -25,7 +25,7 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     // wrangler dev's build of the signaling worker (git-ignored).
-    ".wrangler/**",
+    "**/.wrangler/**",
   ]),
 ]);
 

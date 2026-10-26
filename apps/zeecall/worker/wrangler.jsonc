@@ -1,0 +1,14 @@
+// The signaling worker, deployed apart from the static app:
+//   npx wrangler dev -c worker/wrangler.jsonc       (local, ws://localhost:8787)
+//   npx wrangler deploy -c worker/wrangler.jsonc    (then route signaling.wzee.dev to it)
+{
+  "name": "zeecall-signaling",
+  "main": "signaling-worker.ts",
+  "compatibility_date": "2026-10-01",
+  // One Durable Object per room holds that room's sockets (a plain Worker cannot share them between requests).
+  "durable_objects": {
+    "bindings": [{ "name": "ROOMS", "class_name": "SignalingRoom" }]
+  },
+  // SQLite-backed, as the free plan requires; the object never writes to its storage.
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["SignalingRoom"] }]
+}
