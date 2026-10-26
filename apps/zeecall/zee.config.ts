@@ -10,6 +10,9 @@ export const zee = {
   translations: {
     hu: { description: "Fiók nélküli, titkosított, közvetlen P2P videohívás, 4K képernyőmegosztás és fájlküldés." },
   } as { hu?: { name?: string; description?: string } },
+  // This app's code, shown as a "Source" link on wzee.dev/tools; empty shows none. Fill it in once
+  // the repo is on GitHub, e.g. "https://github.com/<owner>/zeetools/tree/main/apps/zeecall".
+  source: "" as string,
   hub: "https://wzee.dev",
   localOnly: true, // shows the privacy badge in the header
 } as const;
