@@ -74,8 +74,8 @@
     "tailwindcss": "^4"
   },
   "devDependencies": {
-    "@storybook/addon-a11y": "10.6.1",
-    "@storybook/nextjs-vite": "10.6.1",
+    "@storybook/addon-a11y": "10.6.2",
+    "@storybook/nextjs-vite": "10.6.2",
     "@tailwindcss/postcss": "4.1.17",
     "@testing-library/dom": "10.4.2",
     "@testing-library/jest-dom": "7.0.1",
@@ -99,7 +99,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "sonner": "2.0.8",
-    "storybook": "10.6.1",
+    "storybook": "10.6.2",
     "tailwindcss": "4.1.17",
     "typescript": "5.9.3",
     "vite": "8.3.3",
