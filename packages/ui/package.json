@@ -9,12 +9,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wzee-dev/zeetools.git",
+    "url": "git+https://github.com/wzee1/zeetools.git",
     "directory": "packages/ui"
   },
-  "homepage": "https://github.com/wzee-dev/zeetools/tree/main/packages/ui#readme",
+  "homepage": "https://github.com/wzee1/zeetools/tree/main/packages/ui#readme",
   "bugs": {
-    "url": "https://github.com/wzee-dev/zeetools/issues"
+    "url": "https://github.com/wzee1/zeetools/issues"
   },
   "keywords": [
     "nextjs",
