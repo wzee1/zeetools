@@ -1,0 +1,11 @@
+packages:
+  - packages/*
+  - apps/*
+
+# Packages whose install scripts may run (pnpm blocks the rest): binaries for Cypress, esbuild,
+# the ESLint import resolver and the Workers runtime.
+onlyBuiltDependencies:
+  - cypress
+  - esbuild
+  - unrs-resolver
+  - workerd

@@ -5,8 +5,8 @@
 You need Node.js 22 or newer.
 
 ```bash
-npm install     # installs every workspace and sets up the git hooks
-npm run dev --workspace zeepass
+pnpm install     # installs every workspace and sets up the git hooks
+pnpm --filter zeepass dev
 ```
 
 ## Scripts
@@ -15,13 +15,13 @@ Run these from the repository root; each one runs in every workspace that has it
 
 | Script | What it does |
 | --- | --- |
-| `npm run lint` | ESLint, with no warnings allowed |
-| `npm run typecheck` | TypeScript |
-| `npm test` | Vitest unit and component tests |
-| `npm run test:ct` | Cypress component tests (`@zeetools/ui`) |
-| `npm run build` | Production builds of the apps |
+| `pnpm run lint` | ESLint, with no warnings allowed |
+| `pnpm run typecheck` | TypeScript |
+| `pnpm test` | Vitest unit and component tests |
+| `pnpm run test:ct` | Cypress component tests (`@zeetools/ui`) |
+| `pnpm run build` | Production builds of the apps |
 
-To work on one workspace, add `--workspace <name>`, for example `npm test --workspace @zeetools/ui`.
+To work on one workspace, use `pnpm --filter <name> <script>`, for example `pnpm --filter @zeetools/ui test`.
 
 The pre-commit hook runs lint, typecheck, `test` and `test:ct`. If it fails, fix the cause; do not skip it.
 

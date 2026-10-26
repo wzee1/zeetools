@@ -1,7 +1,7 @@
 # Lint, typecheck, unit tests (Vitest), then browser component tests (Cypress), across every workspace.
 # Any failure blocks the commit. The build is left out on purpose: `next build` writes to .next
 # and would break a running dev server.
-npm run lint
-npm run typecheck
-npm test
-npm run test:ct
+pnpm run lint
+pnpm run typecheck
+pnpm test
+pnpm run test:ct

@@ -177,12 +177,12 @@ Import from subpaths, for example `@zeetools/ui/components/ui/actions/button`.
 From the repository root:
 
 ```bash
-npm install
-npm run lint --workspace @zeetools/ui
-npm run typecheck --workspace @zeetools/ui
-npm test --workspace @zeetools/ui          # Vitest
-npm run test:ct --workspace @zeetools/ui   # Cypress component tests
-npm run storybook --workspace @zeetools/ui
+pnpm install
+pnpm --filter @zeetools/ui lint
+pnpm --filter @zeetools/ui typecheck
+pnpm --filter @zeetools/ui test          # Vitest
+pnpm --filter @zeetools/ui test:ct   # Cypress component tests
+pnpm --filter @zeetools/ui storybook
 ```
 
 ## License

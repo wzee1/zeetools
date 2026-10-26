@@ -20,15 +20,15 @@ To connect two browsers, a small Cloudflare Worker (`worker/signaling-worker.ts`
 From the repository root:
 
 ```bash
-npm install
-npm run dev --workspace zeecall
+pnpm install
+pnpm --filter zeecall dev
 ```
 
 ```bash
-npm test --workspace zeecall
-npm run lint --workspace zeecall
-npm run typecheck --workspace zeecall
-npm run build --workspace zeecall     # static export into apps/zeecall/out
+pnpm --filter zeecall test
+pnpm --filter zeecall lint
+pnpm --filter zeecall typecheck
+pnpm --filter zeecall build     # static export into apps/zeecall/out
 ```
 
 The app is a static export (`output: "export"`); the signaling worker is deployed separately.

@@ -4,19 +4,16 @@
   "private": true,
   "description": "The free zee tools (zeepass, zeeimage, zeecall) and @zeetools/ui, the app shell and component library they share.",
   "license": "MIT",
-  "workspaces": [
-    "packages/*",
-    "apps/*"
-  ],
+  "packageManager": "pnpm@10.17.1",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "lint": "npm run lint --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
-    "test:ct": "npm run test:ct --workspaces --if-present",
-    "build": "npm run build --workspaces --if-present",
+    "lint": "pnpm -r --if-present run lint",
+    "typecheck": "pnpm -r --if-present run typecheck",
+    "test": "pnpm -r --if-present run test",
+    "test:ct": "pnpm -r --if-present run test:ct",
+    "build": "pnpm -r --if-present run build",
     "prepare": "husky"
   },
   "devDependencies": {

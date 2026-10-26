@@ -23,18 +23,18 @@ apps/
   zeecall/   Next.js static export, plus a signaling Worker
 ```
 
-This is an npm workspaces monorepo. The apps import `@zeetools/ui` from the workspace.
+This is a pnpm workspace (`pnpm-workspace.yaml`). The apps depend on `@zeetools/ui` as `workspace:*`, so they use the local `packages/ui`, never the published package.
 
 ## Run it
 
 You need Node.js 22 or newer.
 
 ```bash
-npm install
-npm run dev --workspace zeepass     # or zeeimage, zeecall
+pnpm install
+pnpm --filter zeepass dev     # or zeeimage, zeecall
 ```
 
-From the root, `npm run lint`, `typecheck`, `test`, `test:ct` and `build` run in every workspace that has the script. `npm install` also sets up the git hooks (Husky).
+From the root, `pnpm run lint`, `typecheck`, `test`, `test:ct` and `build` run in every workspace that has the script. `pnpm install` also sets up the git hooks (Husky).
 
 ## Contributing
 
