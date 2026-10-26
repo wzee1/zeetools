@@ -1,10 +1,12 @@
 // The signaling worker, deployed apart from the static app:
 //   npx wrangler dev -c worker/wrangler.jsonc       (local, ws://localhost:8787)
-//   npx wrangler deploy -c worker/wrangler.jsonc    (then route signaling.wzee.dev to it)
+//   npx wrangler deploy -c worker/wrangler.jsonc    (live at wss://signaling.wzee.dev)
 {
   "name": "zeecall-signaling",
   "main": "signaling-worker.ts",
   "compatibility_date": "2026-10-01",
+  // The zone wzee.dev is on the same account, so wrangler creates the DNS record for this subdomain.
+  "routes": [{ "pattern": "signaling.wzee.dev", "custom_domain": true }],
   // One Durable Object per room holds that room's sockets (a plain Worker cannot share them between requests).
   "durable_objects": {
     "bindings": [{ "name": "ROOMS", "class_name": "SignalingRoom" }]
