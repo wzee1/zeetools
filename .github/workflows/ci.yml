@@ -1,0 +1,39 @@
+# The same checks as the pre-commit hook, plus the build, on every pull request and every push to main.
+# The ruleset on main requires the "checks" job to pass before a pull request can be merged.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A newer push to the same branch or pull request cancels the run that's still going.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      # pnpm at the version in package.json's packageManager field. It has to come before setup-node,
+      # which sees that field and caches pnpm's store, so it needs pnpm on the PATH already.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: pnpm install --frozen-lockfile
+      # The Cypress binary lives outside node_modules (~/.cache/Cypress), and an install from the cached
+      # pnpm store skips the script that downloads it, so fetch it here (a no-op when it's already there).
+      - run: pnpm --filter @zeetools/ui exec cypress install
+      - run: pnpm run lint
+      - run: pnpm run typecheck
+      - run: pnpm test
+      - run: pnpm run test:ct
+      - run: pnpm run build
