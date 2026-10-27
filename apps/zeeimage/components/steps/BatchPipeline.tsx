@@ -51,7 +51,7 @@ export default function BatchPipeline({ pipeline, dropzoneRef }: BatchPipelinePr
   return (
     <Stagger className="flex flex-col gap-10 shell:min-h-0 shell:flex-1">
       <PageHeader title="Batch Pipeline">
-        Local-first, privacy-focused batch image transformation suite. All scaling, format conversions, and metadata stripping occur inside browser Web Workers.
+        Local-first, privacy-focused batch image transformation suite. All scaling, format conversions, and metadata stripping occur inside browser Web Workers. Your images never leave your device.
       </PageHeader>
 
       <StaggerItem className="flex flex-col shell:min-h-0 shell:flex-1">

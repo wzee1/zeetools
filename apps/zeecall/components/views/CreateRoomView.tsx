@@ -16,8 +16,8 @@ import { BODY, CARD_FIT, FOOTER, SECTION } from "@/lib/card-classes";
 const FEATURES = [
   {
     icon: ShieldCheckIcon,
-    title: "Zero Cloud Logging",
-    body: "Room IDs exist solely in the URL hash fragment (#room). Edge servers never see or log your call keys.",
+    title: "No Media Through Servers",
+    body: "Calls and files go straight between browsers. To connect you, a signaling server relays the room ID and your display name, and Google's STUN server sees your IP address.",
   },
   {
     icon: Monitor,

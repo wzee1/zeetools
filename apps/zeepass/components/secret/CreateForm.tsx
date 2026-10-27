@@ -126,7 +126,7 @@ export default function CreateForm({ onSecretCreated }: CreateFormProps) {
           </span>
         }
       >
-        Paste credentials, passwords, or <code className="font-mono text-foreground">.env</code> files. Plaintext is encrypted locally in browser RAM before leaving your machine.
+        Paste credentials, passwords, or <code className="font-mono text-foreground">.env</code> files. They are encrypted in your browser before anything is sent: the server stores only the encrypted text, until it is opened or expires, and the key stays in the link, so it can’t be read there.
       </PageHeader>
 
       {/* One panel split by hairlines. The textarea is its writing surface, so focus rings the panel. */}
@@ -169,7 +169,7 @@ export default function CreateForm({ onSecretCreated }: CreateFormProps) {
             <div className="space-y-4 px-5 py-6 sm:px-8 sm:py-7">
               <div className="space-y-1">
                 <Label htmlFor={ttlId} className="text-base font-normal">Expiration Lifetime</Label>
-                <p className="text-sm leading-relaxed text-muted">Automatically expunged from Cloudflare KV upon expiry.</p>
+                <p className="text-sm leading-relaxed text-muted">Deleted from the server when it expires.</p>
               </div>
               <Select value={String(ttlSeconds)} onValueChange={(v) => setTtlSeconds(Number(v))}>
                 <SelectTrigger id={ttlId} className="h-10 w-full tabular-nums">

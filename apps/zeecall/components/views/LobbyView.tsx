@@ -40,7 +40,7 @@ export default function LobbyView({ roomName, preview, displayName, onChangeDisp
           </span>
         }
       >
-        Check your camera and microphone levels below.
+        Check your camera and microphone levels below. Once you join, audio, video and files go straight to the other participants, who can see your IP address, as in any peer-to-peer call.
       </PageHeader>
 
       <StaggerItem className="flex flex-col shell:min-h-0 shell:flex-1">
@@ -63,6 +63,7 @@ export default function LobbyView({ roomName, preview, displayName, onChangeDisp
                   maxLength={32}
                   className="h-10"
                 />
+                <p className="text-sm leading-relaxed text-muted">Shown to the others in the room. The signaling server passes it on to them and keeps nothing.</p>
               </div>
 
               <Accordion type="single" collapsible className="border-t border-border">

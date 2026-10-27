@@ -130,7 +130,7 @@ export default function SocialSafeZones() {
   return (
     <Stagger className="flex flex-col gap-10 shell:min-h-0 shell:flex-1">
       <PageHeader title="Social Safe-Zones & Framing">
-        Drag, zoom, and frame your asset against real TikTok & Reels UI overlays so captions and interactive action icons never obscure your key subject.
+        Drag, zoom, and frame your asset against real TikTok & Reels UI overlays so captions and interactive action icons never obscure your key subject. Your image stays on your device.
       </PageHeader>
 
       <StaggerItem className="flex flex-col shell:min-h-0 shell:flex-1">

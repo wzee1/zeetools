@@ -101,7 +101,7 @@ export default function FaviconGenerator() {
       <PageHeader title="Favicon & App Icon Studio">
         Drop 1 high-resolution SVG or square PNG to automatically create a standard multi-layer{' '}
         <code className="font-mono text-foreground">.ico</code> file (16px, 32px, 48px), Apple Touch Icons,
-        PWA Chrome manifest icons, and HTML meta tags.
+        PWA Chrome manifest icons, and HTML meta tags. Generated on your device; nothing is uploaded.
       </PageHeader>
 
       <StaggerItem className="flex flex-col shell:min-h-0 shell:flex-1">
