@@ -7,7 +7,7 @@ import { useZipExporter } from '@/hooks/use-zip-exporter';
 import { downloadBlob } from '@zeetools/ui/lib/export';
 import Tick from '@/components/motion/tick';
 import { FOOTER, SCROLLER, SECTION } from '@/lib/card-classes';
-import { formatBytes } from '@/lib/format';
+import { formatBytes, pluralize } from '@/lib/format';
 import Button from '@zeetools/ui/components/ui/actions/button';
 import ResultThumb from './ResultThumb';
 import Kbd from '@zeetools/ui/components/ui/display/kbd';
@@ -67,7 +67,7 @@ export default function ExportStep({ results, options, onReset }: ExportStepProp
           <div className="min-w-0 space-y-1">
             <h3 className="text-base font-normal text-foreground">Batch Successfully Optimized</h3>
             <p className="text-sm leading-relaxed text-muted">
-              {successfulResults.length} assets processed with zero server uploads and zero privacy leaks.
+              {pluralize(successfulResults.length, 'asset')} processed with zero server uploads and zero privacy leaks.
             </p>
           </div>
         </div>
@@ -123,7 +123,7 @@ export default function ExportStep({ results, options, onReset }: ExportStepProp
                       {outputName}
                     </p>
                     <p className="mt-0.5 font-mono text-xs tabular-nums text-muted">
-                      {formatBytes(res.processedSize)} (-{savings}%)
+                      {formatBytes(res.processedSize)} ({savings > 0 ? `-${savings}` : `+${Math.abs(savings)}`}%)
                     </p>
                   </div>
                 </div>

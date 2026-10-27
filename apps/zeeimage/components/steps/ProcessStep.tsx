@@ -10,6 +10,7 @@ import Button from '@zeetools/ui/components/ui/actions/button';
 import Tick from '@/components/motion/tick';
 import { FOOTER, SCROLLER, SECTION } from '@/lib/card-classes';
 import { formatBytes } from '@/lib/format';
+import { describeFailure, failureSummary } from '@/lib/processors/failure';
 import AlertIcon from '@zeetools/ui/components/icons/status/alert-icon';
 import EyeIcon from '@zeetools/ui/components/icons/media/eye-icon';
 import ChevronRightIcon from '@zeetools/ui/components/icons/navigation/chevron-right-icon';
@@ -45,6 +46,9 @@ export default function ProcessStep({
     resultMap.set(r.originalFile.name, r);
   });
 
+  const failedErrors = results.flatMap((r) => (r.error ? [r.error] : []));
+  const succeeded = results.length - failedErrors.length;
+
   const percentage =
     progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
 
@@ -74,11 +78,16 @@ export default function ProcessStep({
             <h3 className="text-base font-normal text-foreground">
               {isProcessing
                 ? `Processing ${progress.completed} of ${progress.total} Assets...`
-                : `Batch Processing Complete (${results.length}/${assets.length})`}
+                : `Batch Processing Complete (${succeeded}/${assets.length})`}
             </h3>
             <p className="text-sm leading-relaxed text-muted">
               Concurrently executed across {concurrency} Web Worker threads via OffscreenCanvas.
             </p>
+            {!isProcessing && failedErrors.length > 0 && (
+              <p role="status" className="text-sm leading-relaxed text-danger">
+                {failureSummary(failedErrors)}
+              </p>
+            )}
           </div>
 
           <span className="font-mono text-sm tabular-nums text-foreground">
@@ -197,6 +206,8 @@ export default function ProcessStep({
                         <EyeIcon className="size-3.5" />
                         Compare
                       </Button>
+                    ) : isError ? (
+                      <span className="text-xs text-muted">{describeFailure(res?.error ?? '')}</span>
                     ) : (
                       <span className="text-xs text-muted">
                         {isProcessing ? 'Processing' : 'Pending'}
@@ -215,7 +226,7 @@ export default function ProcessStep({
           variant="primary"
           className="h-10 px-4"
           onClick={onProceedToExport}
-          disabled={isProcessing || results.length === 0}
+          disabled={isProcessing || succeeded === 0}
         >
           <span>View Export</span>
           <ChevronRightIcon />

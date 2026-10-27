@@ -1,8 +1,9 @@
+import BlobImage from '@/components/shared/BlobImage';
 import CloseIcon from '@zeetools/ui/components/icons/actions/close-icon';
 
 interface BrowserTabPreviewProps {
-  /** The generated 32px icon (an object URL); the tab shows it at 16px like a browser does. */
-  iconUrl?: string;
+  /** The generated 32px icon; the tab shows it at 16px like a browser does. */
+  icon?: Blob;
   title: string;
 }
 
@@ -10,7 +11,7 @@ interface BrowserTabPreviewProps {
  * A small macOS browser window: a title bar with the three window lights (neutral, as everywhere in the
  * shell) centred on it, and the open tab sitting on the bar's bottom edge so it runs into the page below.
  */
-export default function BrowserTabPreview({ iconUrl, title }: BrowserTabPreviewProps) {
+export default function BrowserTabPreview({ icon, title }: BrowserTabPreviewProps) {
   return (
     <div className="mx-auto w-full max-w-xl overflow-hidden rounded-panel border border-border bg-surface-raised">
       <div className="relative flex h-11 items-end bg-surface pr-3 pl-4">
@@ -23,10 +24,7 @@ export default function BrowserTabPreview({ iconUrl, title }: BrowserTabPreviewP
         {/* The bar's bottom hairline runs under the tab, which covers it: the active tab and the page are one surface. */}
         <span aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-border" />
         <div className="relative flex h-8 w-52 max-w-full min-w-0 items-center gap-2 rounded-t-control border border-b-0 border-border bg-surface-raised pr-2 pl-3 text-xs text-foreground">
-          {iconUrl && (
-            // eslint-disable-next-line @next/next/no-img-element -- blob: preview generated locally; next/image cannot optimise it in a static export
-            <img src={iconUrl} alt="Tab Icon" width={16} height={16} decoding="async" className="size-4 shrink-0" />
-          )}
+          {icon && <BlobImage blob={icon} alt="Tab Icon" width={16} height={16} className="size-4 shrink-0" />}
           <span className="min-w-0 flex-1 truncate">{title}</span>
           <CloseIcon className="size-3 shrink-0 text-muted" />
         </div>

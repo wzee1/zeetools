@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import BlobImage from '@/components/shared/BlobImage';
 import Dropzone from '@/components/zee-ui/dropzone';
 import Button from '@zeetools/ui/components/ui/actions/button';
 import { Card } from '@zeetools/ui/components/ui/display/card';
@@ -65,24 +66,24 @@ export default function SocialSafeZones() {
   const imgRef = useRef<HTMLImageElement | null>(null);
   const frameRef = useRef<HTMLDivElement>(null);
 
-  const imageUrl = useMemo(() => (file ? URL.createObjectURL(file) : ''), [file]);
-
+  // Created and revoked in the same effect, so Strict Mode's remount gets a fresh URL instead of a revoked one.
   useEffect(() => {
-    if (!imageUrl) {
+    if (!file) {
       imgRef.current = null;
       return;
     }
 
+    const url = URL.createObjectURL(file);
     const img = new Image();
-    img.src = imageUrl;
+    img.src = url;
     img.onload = () => {
       imgRef.current = img;
     };
 
     return () => {
-      URL.revokeObjectURL(imageUrl);
+      URL.revokeObjectURL(url);
     };
-  }, [imageUrl]);
+  }, [file]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
@@ -258,7 +259,7 @@ export default function SocialSafeZones() {
                       )}
                     >
                       {/* Image Layer */}
-                      {imageUrl && (
+                      {file && (
                         <div
                           className="pointer-events-none absolute inset-0 flex items-center justify-center"
                           style={{
@@ -266,10 +267,8 @@ export default function SocialSafeZones() {
                             transition: isDragging ? 'none' : 'transform 100ms ease-out',
                           }}
                         >
-                          {/* eslint-disable-next-line @next/next/no-img-element -- blob: of a local file; next/image cannot optimise it in a static export */}
-                          <img
-                            src={imageUrl}
-                            decoding="async"
+                          <BlobImage
+                            blob={file}
                             alt="Framed"
                             className="max-h-full max-w-full object-cover size-full"
                           />

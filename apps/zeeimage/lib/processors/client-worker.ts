@@ -6,6 +6,7 @@ import {
 import { computeTargetDimensions } from './dimensions';
 import { FALLBACK_ENCODE, resolveEncodeParams } from './encode';
 import { WorkerInputMessage, WorkerOutputMessage } from '../workers/image-resizer.worker';
+import { isSvgFile, svgToPngFile } from '../svg';
 
 export function getFileExtension(format: string): string {
   switch (format) {
@@ -34,11 +35,23 @@ export function formatOutputFilename(
   const baseName = originalName.replace(/\.[^/.]+$/, '');
   const ext = getFileExtension(format);
 
-  return template
+  const name = template
     .replace(/\[name\]/g, baseName)
     .replace(/\[width\]/g, String(width))
     .replace(/\[height\]/g, String(height))
     .replace(/\[ext\]/g, ext);
+
+  // The file always ends in the real extension, even if the template left [ext] out.
+  return name.toLowerCase().endsWith(`.${ext}`) ? name : `${name}.${ext}`;
+}
+
+const TRAILING_EXT = '.[ext]';
+
+/** Adds a token to a naming template, keeping a trailing ".[ext]" last. */
+export function insertNameToken(template: string, token: string): string {
+  if (!template.endsWith(TRAILING_EXT)) return template + token;
+  if (token === TRAILING_EXT) return template;
+  return template.slice(0, -TRAILING_EXT.length) + token + TRAILING_EXT;
 }
 
 /**
@@ -175,6 +188,20 @@ export class ClientWorkerProcessor implements ImageProcessorStrategy {
     file: File,
     options: ProcessOptions
   ): Promise<{ result: ProcessResult; worker: Worker | null }> {
+    if (isSvgFile(file)) {
+      // SVGs cannot be decoded in a worker (or by createImageBitmap in Chrome): rasterise on the main thread first.
+      const { file: png, size } = await svgToPngFile(file);
+      const outcome = await this.run(worker, png, options);
+      return {
+        result: {
+          ...outcome.result,
+          originalFile: file,
+          originalSize: file.size,
+          originalDimensions: size,
+        },
+        worker: outcome.worker,
+      };
+    }
     const id = createId();
     if (!worker) {
       return { result: await processInMainThread(file, options, id), worker: null };

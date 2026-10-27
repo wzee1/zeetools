@@ -2,6 +2,7 @@
  * Multi-resolution Windows ICO Binary Encoder & Favicon Package Generator.
  * Encodes multiple PNG streams into a standard Windows .ico container entirely in memory.
  */
+import { isSvgFile, rasterizeSvg } from '@/lib/svg';
 
 export interface IcoImageLayer {
   width: number;
@@ -109,7 +110,8 @@ export async function generateFaviconPackage(
   file: File,
   appName: string = 'My Web App'
 ): Promise<FaviconPackageResult> {
-  const bitmap = await createImageBitmap(file);
+  // An SVG is drawn at the largest target size so every smaller layer stays crisp.
+  const bitmap: CanvasImageSource = isSvgFile(file) ? await rasterizeSvg(file, 512) : await createImageBitmap(file);
 
   // Generate multi-res layers for .ico
   const [png16, png32, png48, png180, png192, png512] = await Promise.all([

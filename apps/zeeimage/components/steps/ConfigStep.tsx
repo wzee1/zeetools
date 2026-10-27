@@ -3,7 +3,8 @@
 import { useId } from 'react';
 import { ProcessOptions, ScaleMode, ImageFormat } from '@/lib/processors/strategy';
 import { PRESETS, Preset } from '@/lib/presets';
-import { formatOutputFilename } from '@/lib/processors/client-worker';
+import { formatOutputFilename, insertNameToken } from '@/lib/processors/client-worker';
+import { computeTargetDimensions } from '@/lib/processors/dimensions';
 import { IngestedAsset } from '@/hooks/use-image-pipeline';
 import Button from '@zeetools/ui/components/ui/actions/button';
 import Slider from '@zeetools/ui/components/ui/forms/slider';
@@ -72,12 +73,14 @@ export default function ConfigStep({
   };
 
   const sampleAsset = assets[0];
+  // The preview shows the size these settings would give the first image.
+  const previewSize = computeTargetDimensions(sampleAsset?.width || 1920, sampleAsset?.height || 1080, options);
   const previewFilename = sampleAsset
     ? formatOutputFilename(
         sampleAsset.file.name,
         options.filenameTemplate,
-        options.width || sampleAsset.width || 1920,
-        options.height || sampleAsset.height || 1080,
+        previewSize.width,
+        previewSize.height,
         options.format
       )
     : 'example-1920x1080.webp';
@@ -341,7 +344,7 @@ export default function ConfigStep({
               <Button
                 key={token}
                 variant="secondary"
-                onClick={() => onOptionsChange({ filenameTemplate: options.filenameTemplate + token })}
+                onClick={() => onOptionsChange({ filenameTemplate: insertNameToken(options.filenameTemplate, token) })}
                 className="font-mono text-xs"
               >
                 {label}

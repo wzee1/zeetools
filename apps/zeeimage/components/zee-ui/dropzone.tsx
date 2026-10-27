@@ -172,13 +172,13 @@ const Dropzone = forwardRef<DropzoneHandle, DropzoneProps>(
             </p>
             {!strip && (
               <p className="text-sm text-muted">
-                {hint || 'PNG, JPEG, WebP, AVIF, SVG, BMP, ICO, HEIC / HEIF supported'}
+                {hint || 'PNG, JPEG, WebP, AVIF, SVG, BMP, ICO supported. HEIC / HEIF where the browser can read it (Safari).'}
               </p>
             )}
           </div>
         </div>
 
-        <div className={cn('flex items-center gap-2 text-xs text-muted', strip && '@max-[40rem]:hidden')}>
+        <div className={cn('flex items-center gap-2 text-xs text-muted max-sm:hidden pointer-coarse:hidden', strip && '@max-[40rem]:hidden')}>
           <span>Press</span>
           <Kbd hotkey="mod+o" />
           <span>to select files anytime</span>

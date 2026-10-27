@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState } from 'react';
+import BlobImage from '@/components/shared/BlobImage';
 import { generateFaviconPackage, FaviconPackageResult } from '@/lib/ico';
 import { createZipArchive } from '@/lib/zip';
 import { buildFaviconBundle, type FaviconTarget } from '@/lib/favicon-targets';
@@ -40,27 +41,13 @@ export default function FaviconGenerator() {
   const [isZipping, setIsZipping] = useState<boolean>(false);
   const [target, setTarget] = useState<FaviconTarget>('html');
 
-  const previewUrls = useMemo(() => {
-    if (!packageResult) return new Map<string, string>();
-    const map = new Map<string, string>();
-    for (const item of packageResult.items) {
-      if (!item.filename.endsWith('.webmanifest')) {
-        map.set(item.filename, URL.createObjectURL(item.blob));
-      }
-    }
-    return map;
-  }, [packageResult]);
-
-  useEffect(() => {
-    return () => {
-      previewUrls.forEach((url) => URL.revokeObjectURL(url));
-    };
-  }, [previewUrls]);
+  const [error, setError] = useState<string | null>(null);
 
   const handleFileDrop = async (files: File[]) => {
     if (!files.length) return;
     const file = files[0];
     setSourceFile(file);
+    setError(null);
     setIsGenerating(true);
 
     try {
@@ -68,6 +55,8 @@ export default function FaviconGenerator() {
       setPackageResult(result);
     } catch (err) {
       console.error('Favicon generation error:', err);
+      setSourceFile(null);
+      setError("Couldn't create icons from that file. Try a PNG or SVG.");
     } finally {
       setIsGenerating(false);
     }
@@ -91,6 +80,7 @@ export default function FaviconGenerator() {
   const handleReset = () => {
     setSourceFile(null);
     setPackageResult(null);
+    setError(null);
   };
 
   const showResult = Boolean(sourceFile && packageResult);
@@ -106,6 +96,12 @@ export default function FaviconGenerator() {
 
       <StaggerItem className="flex flex-col shell:min-h-0 shell:flex-1">
         <Card className={CARD}>
+          {error && !isGenerating && (
+            <p role="alert" className="border-b border-border px-5 py-4 text-sm text-danger sm:px-8">
+              {error}
+            </p>
+          )}
+
           {!showResult && !isGenerating && (
             <Dropzone
               onFiles={handleFileDrop}
@@ -126,7 +122,7 @@ export default function FaviconGenerator() {
               <div className={BODY}>
                 {/* Mock Browser Tab Preview */}
                 <section className={SECTION}>
-                  <BrowserTabPreview iconUrl={previewUrls.get('favicon-32x32.png')} title={appName} />
+                  <BrowserTabPreview icon={packageResult.items.find((i) => i.filename === 'favicon-32x32.png')?.blob} title={appName} />
                 </section>
 
                 {/* Icon Layers: hairline-split cells */}
@@ -134,7 +130,6 @@ export default function FaviconGenerator() {
                   <div className="-mr-px -mb-px grid grid-cols-2 sm:grid-cols-3 @min-[52rem]:grid-cols-6">
                     {packageResult.items.map((item) => {
                       if (item.filename.endsWith('.webmanifest')) return null;
-                      const previewUrl = previewUrls.get(item.filename) || '';
 
                       return (
                         <div
@@ -142,15 +137,11 @@ export default function FaviconGenerator() {
                           className="flex min-w-0 flex-col items-center border-r border-b border-border p-5 text-center"
                         >
                           <div className="flex size-20 items-center justify-center rounded-control border border-border bg-surface p-2">
-                            {previewUrl && (
-                              // eslint-disable-next-line @next/next/no-img-element -- blob: preview generated locally; next/image cannot optimise it in a static export
-                              <img
-                                src={previewUrl}
-                                alt={item.filename}
-                                decoding="async"
-                                className="max-h-full max-w-full object-contain"
-                              />
-                            )}
+                            <BlobImage
+                              blob={item.blob}
+                              alt={item.filename}
+                              className="max-h-full max-w-full object-contain"
+                            />
                           </div>
                           <span className="mt-4 max-w-full truncate text-sm text-foreground">
                             {item.filename}

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ClientWorkerProcessor,
   formatOutputFilename,
+  insertNameToken,
   resolveOutputFormat,
 } from './client-worker';
 import type { ProcessOptions } from './strategy';
@@ -114,5 +115,34 @@ describe('output naming from the produced bytes', () => {
     expect(formatOutputFilename('logo.png', '[name]-[width]x[height].[ext]', 32, 32, resolveOutputFormat(blob, 'image/x-icon'))).toBe(
       'logo-32x32.webp'
     );
+  });
+});
+
+describe('insertNameToken', () => {
+  it('inserts before a trailing .[ext]', () => {
+    expect(insertNameToken('[name]-[width]x[height].[ext]', '-optimized')).toBe(
+      '[name]-[width]x[height]-optimized.[ext]'
+    );
+    expect(insertNameToken('[name].[ext]', '[width]x[height]')).toBe('[name][width]x[height].[ext]');
+  });
+
+  it('appends when there is no trailing .[ext]', () => {
+    expect(insertNameToken('[name]', '-optimized')).toBe('[name]-optimized');
+    expect(insertNameToken('[name]', '.[ext]')).toBe('[name].[ext]');
+  });
+
+  it('does not add a second .[ext]', () => {
+    expect(insertNameToken('[name].[ext]', '.[ext]')).toBe('[name].[ext]');
+  });
+});
+
+describe('formatOutputFilename extension', () => {
+  it('appends the real extension when the template has no [ext]', () => {
+    expect(formatOutputFilename('photo.png', '[name]-optimized', 10, 10, 'image/webp')).toBe('photo-optimized.webp');
+  });
+
+  it('does not double the extension', () => {
+    expect(formatOutputFilename('photo.png', '[name].webp', 10, 10, 'image/webp')).toBe('photo.webp');
+    expect(formatOutputFilename('photo.png', '[name].[ext]', 10, 10, 'image/jpeg')).toBe('photo.jpg');
   });
 });

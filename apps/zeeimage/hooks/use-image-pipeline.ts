@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
+import { toast } from 'sonner';
 import {
   ProcessOptions,
   ProcessResult,
@@ -8,7 +9,9 @@ import {
 } from '../lib/processors/strategy';
 import { ClientWorkerProcessor } from '../lib/processors/client-worker';
 import { DEFAULT_PROCESS_OPTIONS } from '../lib/presets';
-import { normalizeImageFile } from '../lib/heic';
+import { canDecodeHeic } from '../lib/heic';
+import { isSvgFile, readSvgSize } from '../lib/svg';
+import { heicUnsupportedMessage, skippedFilesMessage } from '../lib/ingest-messages';
 
 export interface IngestedAsset {
   id: string;
@@ -45,40 +48,52 @@ export function useImagePipeline(processor?: ImageProcessorStrategy) {
       (f) => validExtensions.test(f.name) || f.type.startsWith('image/')
     );
 
+    const skipped = incomingFiles.length - filteredFiles.length;
+    if (skipped > 0) toast.error(skippedFilesMessage(skipped));
     if (filteredFiles.length === 0) return;
 
     const newAssets: IngestedAsset[] = [];
+    let heicRejected = 0;
 
-    for (const rawFile of filteredFiles) {
+    for (const file of filteredFiles) {
       try {
-        const { file } = await normalizeImageFile(rawFile);
+        if (!(await canDecodeHeic(file))) {
+          heicRejected++;
+          continue;
+        }
         let width = 0;
         let height = 0;
         let thumbnailUrl = '';
 
-        try {
-          const bitmap = await createImageBitmap(file);
-          width = bitmap.width;
-          height = bitmap.height;
-
-          // Create small thumbnail for memory efficiency
-          const thumbMax = 160;
-          const thumbRatio = Math.min(thumbMax / width, thumbMax / height, 1);
-          const tw = Math.max(1, Math.round(width * thumbRatio));
-          const th = Math.max(1, Math.round(height * thumbRatio));
-
-          const canvas = document.createElement('canvas');
-          canvas.width = tw;
-          canvas.height = th;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(bitmap, 0, 0, tw, th);
-            thumbnailUrl = canvas.toDataURL('image/jpeg', 0.8);
-          }
-          bitmap.close();
-        } catch {
-          // Fallback to object URL if bitmap creation fails (e.g. svg)
+        if (isSvgFile(file)) {
+          // createImageBitmap cannot decode SVG: read its size from the markup and show it as it is.
+          ({ width, height } = await readSvgSize(file));
           thumbnailUrl = URL.createObjectURL(file);
+        } else {
+          try {
+            const bitmap = await createImageBitmap(file);
+            width = bitmap.width;
+            height = bitmap.height;
+
+            // Create small thumbnail for memory efficiency
+            const thumbMax = 160;
+            const thumbRatio = Math.min(thumbMax / width, thumbMax / height, 1);
+            const tw = Math.max(1, Math.round(width * thumbRatio));
+            const th = Math.max(1, Math.round(height * thumbRatio));
+
+            const canvas = document.createElement('canvas');
+            canvas.width = tw;
+            canvas.height = th;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.drawImage(bitmap, 0, 0, tw, th);
+              thumbnailUrl = canvas.toDataURL('image/jpeg', 0.8);
+            }
+            bitmap.close();
+          } catch {
+            // Fallback to object URL if bitmap creation fails
+            thumbnailUrl = URL.createObjectURL(file);
+          }
         }
 
         newAssets.push({
@@ -91,9 +106,11 @@ export function useImagePipeline(processor?: ImageProcessorStrategy) {
           type: file.type || 'image/*',
         });
       } catch (err) {
-        console.error('Failed to ingest file:', rawFile.name, err);
+        console.error('Failed to ingest file:', file.name, err);
       }
     }
+
+    if (heicRejected > 0) toast.error(heicUnsupportedMessage(heicRejected));
 
     // The queue stays in view; "Configure Batch" (or ⌘↵) moves on.
     setAssets((prev) => [...prev, ...newAssets]);

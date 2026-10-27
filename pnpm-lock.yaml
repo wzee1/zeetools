@@ -69,7 +69,7 @@ importers:
         version: 9.39.1(jiti@2.7.0)
       eslint-config-next:
         specifier: 16.4.3
-        version: 16.4.3(eslint@9.39.1(jiti@2.7.0))(typescript@5.9.3)
+        version: 16.4.3(@typescript-eslint/parser@8.72.0(eslint@9.39.1(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.1(jiti@2.7.0))(typescript@5.9.3)
       jsdom:
         specifier: 29.1.1
         version: 29.1.1
@@ -109,6 +109,9 @@ importers:
       react-dom:
         specifier: 19.2.8
         version: 19.2.8(react@19.2.8)
+      sonner:
+        specifier: 2.0.8
+        version: 2.0.8(@types/react@19.2.7)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
     devDependencies:
       '@tailwindcss/postcss':
         specifier: 4.1.17
@@ -142,7 +145,7 @@ importers:
         version: 9.39.1(jiti@2.7.0)
       eslint-config-next:
         specifier: 16.4.3
-        version: 16.4.3(@typescript-eslint/parser@8.72.0(eslint@9.39.1(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.1(jiti@2.7.0))(typescript@5.9.3)
+        version: 16.4.3(eslint@9.39.1(jiti@2.7.0))(typescript@5.9.3)
       jsdom:
         specifier: 29.1.1
         version: 29.1.1

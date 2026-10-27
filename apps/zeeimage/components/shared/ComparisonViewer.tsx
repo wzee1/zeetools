@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback } from 'react';
+import BlobImage from '@/components/shared/BlobImage';
 import { motion } from 'motion/react';
 import { createPortal } from 'react-dom';
 import CloseIcon from '@zeetools/ui/components/icons/actions/close-icon';
@@ -23,18 +24,6 @@ export default function ComparisonViewer({
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const originalUrl = useMemo(() => URL.createObjectURL(originalFile), [originalFile]);
-  const processedUrl = useMemo(
-    () => URL.createObjectURL(processedResult.processedBlob),
-    [processedResult.processedBlob]
-  );
-
-  useEffect(() => {
-    return () => {
-      URL.revokeObjectURL(originalUrl);
-      URL.revokeObjectURL(processedUrl);
-    };
-  }, [originalUrl, processedUrl]);
 
   const handleMove = useCallback((clientX: number) => {
     if (!containerRef.current) return;
@@ -121,30 +110,22 @@ export default function ComparisonViewer({
         >
           {/* Processed Layer (Background / Right) */}
           <div className="relative max-h-full max-w-full">
-            {processedUrl && (
-              // eslint-disable-next-line @next/next/no-img-element -- blob: of a locally processed file; next/image cannot optimise it in a static export
-              <img
-                src={processedUrl}
-                decoding="async"
-                alt="Processed"
-                className="max-h-[65vh] max-w-full object-contain pointer-events-none rounded-control"
-              />
-            )}
+            <BlobImage
+              blob={processedResult.processedBlob}
+              alt="Processed"
+              className="max-h-[65vh] max-w-full object-contain pointer-events-none rounded-control"
+            />
 
             {/* Original Layer (Clipped / Left) */}
             <div
               className="absolute inset-0 overflow-hidden"
               style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
             >
-              {originalUrl && (
-                // eslint-disable-next-line @next/next/no-img-element -- blob: of a local file; next/image cannot optimise it in a static export
-                <img
-                  src={originalUrl}
-                  decoding="async"
-                  alt="Original"
-                  className="max-h-[65vh] max-w-full object-contain pointer-events-none rounded-control"
-                />
-              )}
+              <BlobImage
+                blob={originalFile}
+                alt="Original"
+                className="max-h-[65vh] max-w-full object-contain pointer-events-none rounded-control"
+              />
             </div>
 
             {/* Slider Line & Handle */}
