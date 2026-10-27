@@ -1,0 +1,28 @@
+# A squash merge takes its commit title from the pull request title, and that commit is made on GitHub,
+# so the local commit-msg hook never sees it. This applies the same rule to the title instead.
+# The ruleset on main requires the "pr-title" job to pass before a pull request can be merged.
+name: PR title
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions: {}
+
+jobs:
+  pr-title:
+    name: pr-title
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      # The title goes through an environment variable, never straight into the script, so a crafted
+      # title can't run commands.
+      - env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if printf '%s' "$TITLE" | grep -Eq '^(feat|fix|refactor|docs|chore|build|ci|test|perf|style)(\([a-z0-9-]+\))?!?: [a-z].+$'; then
+            echo "PR title is fine: $TITLE"
+          else
+            echo "::error::PR title must look like 'type: lowercase description' (feat, fix, refactor, docs, chore, build, ci, test, perf, style), e.g. 'fix: keep the logo aligned on mobile'. Got: $TITLE"
+            exit 1
+          fi

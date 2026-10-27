@@ -29,6 +29,8 @@ The pre-commit hook runs lint, typecheck, `test` and `test:ct`. If it fails, fix
 
 Titles look like `type: lowercase description`, with a type of `feat`, `fix`, `refactor`, `docs`, `chore`, `build`, `ci`, `test` or `perf` (or `style`), for example `fix: keep the sidebar width after a reload`. The `commit-msg` hook checks it.
 
+Pull requests are squash-merged, and the squash commit takes the pull request's title, so the title follows the same rule. The `pr-title` check fails a pull request until it does; editing the title re-runs it.
+
 ## Code
 
 - One component per file, as the default export. Radix-style compound primitives (dialog, select, tabs) keep their named exports.
