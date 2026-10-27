@@ -42,7 +42,7 @@ pnpm --filter zeeimage build     # static export into apps/zeeimage/out
 
 The build is a plain static site (`output: "export"`), so it can be hosted anywhere that serves files.
 
-`pnpm --filter zeeimage deploy` builds it, uploads `out` to the `zeeimage` Cloudflare Pages project (production) and refreshes wzee.dev/tools. The first run asks to create the project; then add `image.wzee.dev` as its custom domain in the dashboard. Add the domain only after that first upload: wzee.dev/tools reads every subdomain, and one that doesn't answer holds back the whole list.
+`pnpm --filter zeeimage run deploy` builds it, uploads `out` to the `zeeimage` Cloudflare Pages project (production) and refreshes wzee.dev/tools. The first run asks to create the project; then add `image.wzee.dev` as its custom domain in the dashboard. Add the domain only after that first upload: wzee.dev/tools reads every subdomain, and one that doesn't answer holds back the whole list.
 
 ## Where things are
 
