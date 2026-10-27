@@ -8,6 +8,7 @@ describe("Server Actions (createSecretAction & revealSecretAction)", () => {
     _resetDevStore();
   });
 
+  const verifier = "v".repeat(43);
   const validIv = bufferToBase64Url(new Uint8Array(12).fill(7).buffer);
   const sampleCiphertext = bufferToBase64Url(
     new TextEncoder().encode("encrypted-payload-sample").buffer
@@ -17,6 +18,7 @@ describe("Server Actions (createSecretAction & revealSecretAction)", () => {
     const res = await createSecretAction({
       ciphertext: sampleCiphertext,
       iv: validIv,
+      verifier,
       ttlSeconds: 3600,
       burnOnRead: true,
     });
@@ -34,6 +36,7 @@ describe("Server Actions (createSecretAction & revealSecretAction)", () => {
     const createRes = await createSecretAction({
       ciphertext: sampleCiphertext,
       iv: validIv,
+      verifier,
       burnOnRead: true,
     });
 
@@ -41,7 +44,7 @@ describe("Server Actions (createSecretAction & revealSecretAction)", () => {
     if (!createRes.ok) return;
 
     // First fetch: should succeed and mark burned
-    const firstReveal = await revealSecretAction(createRes.id);
+    const firstReveal = await revealSecretAction(createRes.id, verifier);
     expect(firstReveal.ok).toBe(true);
     if (firstReveal.ok) {
       expect(firstReveal.ciphertext).toBe(sampleCiphertext);
@@ -50,7 +53,7 @@ describe("Server Actions (createSecretAction & revealSecretAction)", () => {
     }
 
     // Second fetch: must return burned_or_expired
-    const secondReveal = await revealSecretAction(createRes.id);
+    const secondReveal = await revealSecretAction(createRes.id, verifier);
     expect(secondReveal.ok).toBe(false);
     if (!secondReveal.ok) {
       expect(secondReveal.error).toBe("burned_or_expired");
@@ -61,19 +64,20 @@ describe("Server Actions (createSecretAction & revealSecretAction)", () => {
     const createRes = await createSecretAction({
       ciphertext: sampleCiphertext,
       iv: validIv,
+      verifier,
       burnOnRead: false,
     });
 
     expect(createRes.ok).toBe(true);
     if (!createRes.ok) return;
 
-    const firstReveal = await revealSecretAction(createRes.id);
+    const firstReveal = await revealSecretAction(createRes.id, verifier);
     expect(firstReveal.ok).toBe(true);
     if (firstReveal.ok) {
       expect(firstReveal.burned).toBe(false);
     }
 
-    const secondReveal = await revealSecretAction(createRes.id);
+    const secondReveal = await revealSecretAction(createRes.id, verifier);
     expect(secondReveal.ok).toBe(true);
   });
 
@@ -84,6 +88,7 @@ describe("Server Actions (createSecretAction & revealSecretAction)", () => {
     const res = await createSecretAction({
       ciphertext: sampleCiphertext,
       iv: shortIv,
+      verifier,
     });
 
     expect(res.ok).toBe(false);
@@ -100,6 +105,7 @@ describe("Server Actions (createSecretAction & revealSecretAction)", () => {
     const res = await createSecretAction({
       ciphertext: oversizedCiphertext,
       iv: validIv,
+      verifier,
     });
 
     expect(res.ok).toBe(false);
@@ -109,11 +115,24 @@ describe("Server Actions (createSecretAction & revealSecretAction)", () => {
   });
 
   it("returns invalid_id for malformed secret IDs", async () => {
-    const res = await revealSecretAction("not-a-valid-uuid");
+    const res = await revealSecretAction("not-a-valid-uuid", verifier);
     expect(res.ok).toBe(false);
     if (!res.ok) {
       expect(res.error).toBe("invalid_id");
     }
+  });
+
+  it("answers wrong_key without burning the secret", async () => {
+    const created = await createSecretAction({
+      ciphertext: sampleCiphertext,
+      iv: validIv,
+      verifier,
+      burnOnRead: true,
+    });
+    if (!created.ok) throw new Error("create failed");
+    expect(await revealSecretAction(created.id, "w".repeat(43))).toEqual({ ok: false, error: "wrong_key" });
+    expect((await revealSecretAction(created.id, verifier)).ok).toBe(true);
+    expect(await revealSecretAction(created.id, verifier)).toEqual({ ok: false, error: "burned_or_expired" });
   });
 
   describe("expiry without a KV binding", () => {
@@ -126,16 +145,17 @@ describe("Server Actions (createSecretAction & revealSecretAction)", () => {
       const created = await createSecretAction({
         ciphertext: sampleCiphertext,
         iv: validIv,
+      verifier,
         ttlSeconds: 3600,
         burnOnRead: false,
       });
       if (!created.ok) throw new Error("create failed");
 
       vi.advanceTimersByTime(3600 * 1000 - 1);
-      expect((await revealSecretAction(created.id)).ok).toBe(true);
+      expect((await revealSecretAction(created.id, verifier)).ok).toBe(true);
 
       vi.advanceTimersByTime(2);
-      expect(await revealSecretAction(created.id)).toEqual({
+      expect(await revealSecretAction(created.id, verifier)).toEqual({
         ok: false,
         error: "burned_or_expired",
       });

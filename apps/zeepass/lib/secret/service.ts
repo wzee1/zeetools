@@ -1,5 +1,7 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { KEY_PATTERN } from "../crypto/engine";
 import { base64UrlToBuffer } from "../utils/formatters";
+import { verifierMatches } from "./vault";
 import type {
   CreateSecretInput,
   CreateSecretResult,
@@ -56,7 +58,7 @@ function getVault(id: string): VaultStub | undefined {
 export async function saveSecret(
   input: CreateSecretInput
 ): Promise<CreateSecretResult> {
-  const { ciphertext, iv, ttlSeconds = DEFAULT_TTL_SECONDS, burnOnRead = true } =
+  const { ciphertext, iv, verifier, ttlSeconds = DEFAULT_TTL_SECONDS, burnOnRead = true } =
     input;
 
   if (!ciphertext || typeof ciphertext !== "string") {
@@ -65,6 +67,11 @@ export async function saveSecret(
 
   if (!iv || typeof iv !== "string") {
     return { ok: false, error: "Initialization vector (IV) is required." };
+  }
+
+  // A SHA-256 hash is 32 bytes, which is 43 base64url characters.
+  if (typeof verifier !== "string" || !KEY_PATTERN.test(verifier)) {
+    return { ok: false, error: "Invalid key verifier." };
   }
 
   // Validate IV length: 12 bytes decoded
@@ -101,6 +108,7 @@ export async function saveSecret(
   const record: SecretRecord = {
     ciphertext,
     iv,
+    verifier,
     burnOnRead: Boolean(burnOnRead),
     createdAt: now,
   };
@@ -133,9 +141,11 @@ export async function saveSecret(
 
 /**
  * Takes the ciphertext out of its vault; with burn-on-read the vault deletes it in the same atomic step.
+ * A verifier that does not match the key's gives "wrong_key" and leaves the secret untouched.
  */
 export async function fetchAndBurnSecret(
-  id: string
+  id: string,
+  verifier: string
 ): Promise<RevealSecretResult> {
   if (!id || typeof id !== "string" || !/^[0-9a-fA-F-]{36}$/.test(id)) {
     return { ok: false, error: "invalid_id" };
@@ -147,10 +157,16 @@ export async function fetchAndBurnSecret(
 
   if (vault) {
     const res = await vault.fetch(
-      new Request("https://vault/take", { method: "POST" })
+      new Request("https://vault/take", {
+        method: "POST",
+        body: JSON.stringify({ verifier }),
+      })
     );
     if (res.status === 404) {
       return { ok: false, error: "burned_or_expired" };
+    }
+    if (res.status === 403) {
+      return { ok: false, error: "wrong_key" };
     }
     if (!res.ok) {
       return { ok: false, error: "server_error" };
@@ -168,6 +184,9 @@ export async function fetchAndBurnSecret(
     }
 
     record = entry.record;
+    if (typeof verifier !== "string" || !verifierMatches(record.verifier, verifier)) {
+      return { ok: false, error: "wrong_key" };
+    }
     if (record.burnOnRead) {
       // Deletion from the in-memory fallback
       devStore.delete(key);

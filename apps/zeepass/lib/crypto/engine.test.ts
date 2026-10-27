@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  computeKeyVerifier,
   decryptSecret,
   encryptSecret,
   exportKeyToBase64,
@@ -100,5 +101,15 @@ SPECIAL_NOTE="Árvíztűrő tükörfúrógép 🔒💥🚀"
         rawKeyBase64: wrongKeyBase64,
       })
     ).rejects.toThrow();
+  });
+
+  it("computes a deterministic 43-character verifier that differs per key", async () => {
+    const a = await exportKeyToBase64(await generateSecretKey());
+    const b = await exportKeyToBase64(await generateSecretKey());
+    const va = await computeKeyVerifier(a);
+    expect(va).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(await computeKeyVerifier(a)).toBe(va);
+    expect(await computeKeyVerifier(b)).not.toBe(va);
+    expect(va).not.toContain(a);
   });
 });

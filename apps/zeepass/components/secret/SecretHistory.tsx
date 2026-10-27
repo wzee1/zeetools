@@ -27,6 +27,7 @@ export default function SecretHistory() {
       {secrets.length === 0 ? (
         <p className="mt-2 px-2.5 text-xs leading-relaxed text-muted/80">Links you create stay listed here until they expire.</p>
       ) : (
+        <>
         <ul className="mt-2 min-h-0 flex-1 space-y-0.5 overflow-y-auto">
           <AnimatePresence initial={false}>
             {secrets.map((secret) => {
@@ -66,6 +67,8 @@ export default function SecretHistory() {
             })}
           </AnimatePresence>
         </ul>
+        <p className="mt-2 shrink-0 px-2.5 text-xs leading-relaxed text-muted/80">Listed until they expire, even after they’re opened.</p>
+        </>
       )}
     </SidebarGroup>
   );

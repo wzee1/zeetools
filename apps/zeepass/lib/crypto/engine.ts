@@ -27,6 +27,20 @@ function getRandomValues(array: Uint8Array): Uint8Array {
   return cryptoObj.getRandomValues(array);
 }
 
+/** A key is 32 bytes, which is 43 unpadded base64url characters. */
+export const KEY_PATTERN = /^[A-Za-z0-9_-]{43}$/;
+
+/**
+ * Hash of the key that lets the server tell a mistyped link from the right one without learning the key.
+ * It does not weaken the encryption: the key is 256 random bits, so a SHA-256 hash of it (domain-separated
+ * by the prefix, never reused as a key) cannot be reversed or guessed, and it is the only thing the server sees.
+ */
+export async function computeKeyVerifier(keyBase64: string): Promise<string> {
+  const subtle = getSubtleCrypto();
+  const data = new TextEncoder().encode(`zeepass-verify:${keyBase64}`);
+  return bufferToBase64Url(await subtle.digest("SHA-256", data));
+}
+
 /**
  * Generates an ephemeral 256-bit AES-GCM symmetric key.
  */

@@ -16,7 +16,7 @@ import LockIcon from "@zeetools/ui/components/icons/status/lock-icon";
 import StaggerItem from "@zeetools/ui/components/motion/stagger-item";
 import { Card } from "@zeetools/ui/components/ui/display/card";
 import StatusCard from "@/components/secret/StatusCard";
-import { decryptSecret } from "@/lib/crypto/engine";
+import { computeKeyVerifier, decryptSecret, KEY_PATTERN } from "@/lib/crypto/engine";
 import { revealSecretAction } from "@/lib/secret/actions";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -27,17 +27,30 @@ interface RevealCardProps {
 
 type RevealState =
   | { status: "missing_key" }
+  | { status: "incomplete_key" }
+  | { status: "wrong_key" }
+  | { status: "not_found" }
   | { status: "interstitial"; keyBase64: string }
   | { status: "revealing" }
   | { status: "burned_or_expired" }
   | { status: "decryption_failed"; error: string }
   | { status: "revealed"; plaintext: string; wasBurned: boolean };
 
-function parseHashKey(): RevealState {
+// Same shape the server accepts; anything else cannot be a link we made.
+const ID_PATTERN = /^[0-9a-fA-F-]{36}$/;
+
+function parseHashKey(id: string): RevealState {
+  if (!ID_PATTERN.test(id)) {
+    return { status: "not_found" };
+  }
   const hash = window.location.hash;
   const match = hash.match(/^#key=([A-Za-z0-9_-]+)$/);
   if (!match || !match[1]) {
     return { status: "missing_key" };
+  }
+  // A real key is exactly 43 characters; anything else was cut short or changed on the way.
+  if (!KEY_PATTERN.test(match[1])) {
+    return { status: "incomplete_key" };
   }
   return { status: "interstitial", keyBase64: match[1] };
 }
@@ -50,12 +63,12 @@ export default function RevealCard({ id }: RevealCardProps) {
   // Read the key from the URL hash once mounted, and keep it in sync if the hash changes
   useEffect(() => {
     const handleHashChange = () => {
-      setState(parseHashKey());
+      setState(parseHashKey(id));
     };
     handleHashChange();
     window.addEventListener("hashchange", handleHashChange);
     return () => window.removeEventListener("hashchange", handleHashChange);
-  }, []);
+  }, [id]);
 
   const handleReveal = useCallback(async () => {
     if (state.status !== "interstitial") return;
@@ -65,15 +78,20 @@ export default function RevealCard({ id }: RevealCardProps) {
 
     try {
       // Call Server Action to retrieve ciphertext & trigger atomic destruction on KV
-      const result = await revealSecretAction(id);
+      // The verifier lets the server refuse a mistyped key before it burns anything.
+      const result = await revealSecretAction(id, await computeKeyVerifier(keyBase64));
 
       if (!result.ok) {
         if (result.error === "burned_or_expired") {
           setState({ status: "burned_or_expired" });
+        } else if (result.error === "invalid_id") {
+          setState({ status: "not_found" });
+        } else if (result.error === "wrong_key") {
+          setState({ status: "wrong_key" });
         } else {
           setState({
             status: "decryption_failed",
-            error: "Unable to retrieve secret from server.",
+            error: "The server could not return the secret. Try again in a moment.",
           });
         }
         return;
@@ -149,6 +167,42 @@ export default function RevealCard({ id }: RevealCardProps) {
     );
   }
 
+  // Incomplete Key State
+  if (state.status === "incomplete_key") {
+    return (
+      <StatusCard
+        icon={<AlertIcon />}
+        title="Link Looks Incomplete"
+        action={<CreateAnotherLink />}
+      >
+        The decryption key in this link is the wrong length, so the link was probably cut off or changed. Copy the whole link again and open it. The secret has not been opened or deleted.
+      </StatusCard>
+    );
+  }
+
+  // Wrong Key State
+  if (state.status === "wrong_key") {
+    return (
+      <StatusCard
+        icon={<AlertIcon />}
+        title="Wrong Key"
+        tone="danger"
+        action={<CreateAnotherLink />}
+      >
+        This link’s key doesn’t match. Make sure you copied the whole link; the secret has not been opened or deleted.
+      </StatusCard>
+    );
+  }
+
+  // Not Found State
+  if (state.status === "not_found") {
+    return (
+      <StatusCard icon={<AlertIcon />} title="Link Not Found" action={<CreateAnotherLink />}>
+        Link not found: this link isn’t valid, or the secret has expired or been opened.
+      </StatusCard>
+    );
+  }
+
   // Burned or Expired State
   if (state.status === "burned_or_expired") {
     return (
@@ -204,7 +258,7 @@ export default function RevealCard({ id }: RevealCardProps) {
             </div>
 
             <div className="flex flex-col-reverse items-stretch justify-between gap-4 border-t border-border px-5 py-5 sm:flex-row sm:items-center sm:px-8">
-              <p className="text-xs text-muted">
+              <p className="text-xs text-muted max-sm:hidden pointer-coarse:hidden">
                 Press <ZeeKbd hotkey="space" /> or <ZeeKbd hotkey="enter" /> to reveal
               </p>
               <ZeeButton

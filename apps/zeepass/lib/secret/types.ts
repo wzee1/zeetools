@@ -1,6 +1,7 @@
 export interface SecretRecord {
   ciphertext: string;
   iv: string;
+  verifier: string;
   burnOnRead: boolean;
   createdAt: number;
 }
@@ -8,6 +9,7 @@ export interface SecretRecord {
 export interface CreateSecretInput {
   ciphertext: string;
   iv: string;
+  verifier: string;
   ttlSeconds?: number;
   burnOnRead?: boolean;
 }
@@ -18,4 +20,4 @@ export type CreateSecretResult =
 
 export type RevealSecretResult =
   | { ok: true; ciphertext: string; iv: string; burned: boolean }
-  | { ok: false; error: "burned_or_expired" | "invalid_id" | "server_error" };
+  | { ok: false; error: "burned_or_expired" | "invalid_id" | "wrong_key" | "server_error" };

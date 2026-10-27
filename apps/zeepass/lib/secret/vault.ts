@@ -26,6 +26,16 @@ interface StoredEntry {
 
 const ENTRY_KEY = "entry";
 
+/** Compares two strings without stopping at the first difference. */
+export function verifierMatches(expected: string, given: string): boolean {
+  if (expected.length !== given.length) return false;
+  let diff = 0;
+  for (let i = 0; i < expected.length; i++) {
+    diff |= expected.charCodeAt(i) ^ given.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
 /**
  * One secret per object, so a secret has exactly one place where it lives and one place where it is burned.
  * (Addressed by the secret id through an EU-jurisdiction namespace, see lib/secret/service.ts.)
@@ -45,7 +55,9 @@ export class SecretVault {
     }
 
     if (request.method === "POST" && pathname === "/take") {
-      const record = await this.take();
+      const { verifier } = (await request.json()) as { verifier?: string };
+      const record = await this.take(typeof verifier === "string" ? verifier : "");
+      if (record === "wrong_key") return new Response(null, { status: 403 });
       return record ? Response.json(record) : new Response(null, { status: 404 });
     }
 
@@ -60,13 +72,14 @@ export class SecretVault {
   }
 
   /**
-   * Returns the record, or null when it is gone or expired. With burnOnRead the delete happens in the same step.
+   * Returns the record, or null when it is gone or expired, or "wrong_key" when the verifier does not match
+   * (nothing is deleted or returned then). With burnOnRead the delete happens in the same step.
    * Between the read and the delete this awaits only this object's own storage, so the runtime's input gates
    * already keep other requests out; the queue below makes the same promise without relying on them, so a
    * second take can never see the record before the first has deleted it.
    */
-  take(): Promise<SecretRecord | null> {
-    const result = this.queue.then(() => this.takeNow());
+  take(verifier: string): Promise<SecretRecord | "wrong_key" | null> {
+    const result = this.queue.then(() => this.takeNow(verifier));
     this.queue = result.then(
       () => undefined,
       () => undefined
@@ -74,7 +87,7 @@ export class SecretVault {
     return result;
   }
 
-  private async takeNow(): Promise<SecretRecord | null> {
+  private async takeNow(verifier: string): Promise<SecretRecord | "wrong_key" | null> {
     const entry = await this.state.storage.get<StoredEntry>(ENTRY_KEY);
     if (!entry) return null;
 
@@ -82,6 +95,9 @@ export class SecretVault {
       await this.wipe();
       return null;
     }
+
+    // Compare and delete happen in this one step, so a wrong key can never burn the secret.
+    if (!verifierMatches(entry.record.verifier, verifier)) return "wrong_key";
 
     if (entry.record.burnOnRead) {
       await this.wipe();

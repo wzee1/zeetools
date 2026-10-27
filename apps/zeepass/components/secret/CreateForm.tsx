@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import Switch from "@zeetools/ui/components/ui/forms/switch";
 import ZeeButton from "@/components/zee-ui/ZeeButton";
 import ZeeKbd from "@/components/zee-ui/ZeeKbd";
-import { encryptSecret, exportKeyToBase64, generateSecretKey } from "@/lib/crypto/engine";
+import { computeKeyVerifier, encryptSecret, exportKeyToBase64, generateSecretKey } from "@/lib/crypto/engine";
 import { useSecretHistory } from "@/hooks/use-secret-history";
 import { createSecretAction } from "@/lib/secret/actions";
 import { cn } from "@zeetools/ui/lib/utils";
@@ -68,10 +68,11 @@ export default function CreateForm({ onSecretCreated }: CreateFormProps) {
       // 2. Encrypt locally in browser RAM
       const encrypted = await encryptSecret(plaintext, key);
 
-      // 3. Send ONLY ciphertext and IV to Server Action (Zero plaintext, zero key)
+      // 3. Send ciphertext, IV and a one-way key verifier to the Server Action (zero plaintext, zero key)
       const res = await createSecretAction({
         ciphertext: encrypted.ciphertext,
         iv: encrypted.iv,
+        verifier: await computeKeyVerifier(rawKeyBase64),
         ttlSeconds,
         burnOnRead,
       });
@@ -196,7 +197,7 @@ export default function CreateForm({ onSecretCreated }: CreateFormProps) {
           </div>
 
           <div className="flex flex-col-reverse items-stretch justify-between gap-4 border-t border-border px-5 py-5 sm:flex-row sm:items-center sm:px-8">
-            <div className="flex items-center gap-1.5 text-xs text-muted">
+            <div className="flex items-center gap-1.5 text-xs text-muted max-sm:hidden pointer-coarse:hidden">
               <span>Submit:</span>
               <ZeeKbd hotkey="mod+enter" />
               <span aria-hidden>·</span>

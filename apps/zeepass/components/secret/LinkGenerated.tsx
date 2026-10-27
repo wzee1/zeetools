@@ -119,7 +119,7 @@ export default function LinkGenerated({
           </div>
 
           <div className="flex flex-col-reverse items-stretch justify-between gap-4 border-t border-border px-5 py-5 sm:flex-row sm:items-center sm:px-8">
-            <span className="text-xs text-muted">
+            <span className="text-xs text-muted max-sm:hidden pointer-coarse:hidden">
               Press <ZeeKbd hotkey="esc" /> to reset
             </span>
             <ZeeButton variant="secondary" onClick={onReset} className="h-10 px-4">

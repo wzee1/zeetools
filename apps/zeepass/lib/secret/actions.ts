@@ -8,7 +8,7 @@ import type {
 } from "./types";
 
 /**
- * Server Action to persist an encrypted secret payload to Cloudflare KV.
+ * Server Action to store an encrypted secret payload in its Durable Object.
  * Zero plaintext or decryption keys are transmitted or received.
  */
 export async function createSecretAction(
@@ -27,10 +27,11 @@ export async function createSecretAction(
  * Protected against crawler/scraper prefetching since Server Actions require POST.
  */
 export async function revealSecretAction(
-  id: string
+  id: string,
+  verifier: string
 ): Promise<RevealSecretResult> {
   try {
-    return await fetchAndBurnSecret(id);
+    return await fetchAndBurnSecret(id, verifier);
   } catch (error) {
     console.error("Failed to reveal secret action:", error);
     return { ok: false, error: "server_error" };
