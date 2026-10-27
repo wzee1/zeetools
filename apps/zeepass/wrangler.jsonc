@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "main": ".open-next/worker.js",
+  "main": "worker.ts",
   "name": "zeepass",
   "routes": [
     { "pattern": "pass.wzee.dev", "custom_domain": true }
@@ -8,8 +8,9 @@
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
-  "kv_namespaces": [
-    { "binding": "SECRETS_KV", "id": "zeepass-secrets-kv" }
-  ],
+  "durable_objects": {
+    "bindings": [{ "name": "SECRETS", "class_name": "SecretVault" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["SecretVault"] }],
   "observability": { "enabled": false }
 }

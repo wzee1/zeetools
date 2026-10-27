@@ -12,14 +12,15 @@ const DEFAULT_TTL_SECONDS = 86400; // 24 hours
 const MIN_TTL_SECONDS = 300; // 5 minutes
 const MAX_TTL_SECONDS = 604800; // 7 days
 
-interface CloudflareKV {
-  get(key: string, type: "json"): Promise<SecretRecord | null>;
-  put(
-    key: string,
-    value: string,
-    options?: { expirationTtl?: number }
-  ): Promise<void>;
-  delete(key: string): Promise<void>;
+interface VaultStub {
+  fetch(request: Request): Promise<Response>;
+}
+
+interface VaultNamespace {
+  jurisdiction(jurisdiction: "eu"): {
+    idFromName(name: string): unknown;
+    get(id: unknown): VaultStub;
+  };
 }
 
 /** Local in-memory store for next dev, vitest, and non-Cloudflare environments */
@@ -31,19 +32,25 @@ export function _resetDevStore(): void {
 }
 
 /**
- * Resolves Cloudflare SECRETS_KV binding; falls back to undefined in dev/test runners.
+ * Resolves the vault stub of one secret; undefined in dev/test runners that have no SECRETS binding.
+ * The EU jurisdiction pins the object, and so its storage, to the EU.
  */
-function getKvBinding(): CloudflareKV | undefined {
+function getVault(id: string): VaultStub | undefined {
+  let namespace: VaultNamespace | undefined;
   try {
-    return (getCloudflareContext().env as { SECRETS_KV?: CloudflareKV })
-      .SECRETS_KV;
+    namespace = (getCloudflareContext().env as { SECRETS?: VaultNamespace })
+      .SECRETS;
   } catch {
     return undefined;
   }
+  if (!namespace) return undefined;
+  // Not inside the try: with a binding present, a failure must surface instead of falling back to memory.
+  const eu = namespace.jurisdiction("eu");
+  return eu.get(eu.idFromName(id));
 }
 
 /**
- * Validates and saves an encrypted secret to KV with automated TTL expungement.
+ * Validates and saves an encrypted secret in its own Durable Object, which wipes it at expiry.
  * Guaranteed zero IP logging.
  */
 export async function saveSecret(
@@ -98,11 +105,17 @@ export async function saveSecret(
     createdAt: now,
   };
 
-  const kv = getKvBinding();
-  if (kv) {
-    await kv.put(`secret:${id}`, JSON.stringify(record), {
-      expirationTtl: boundedTtl,
-    });
+  const vault = getVault(id);
+  if (vault) {
+    const res = await vault.fetch(
+      new Request("https://vault/store", {
+        method: "POST",
+        body: JSON.stringify({ record, expiresAt: now + boundedTtl * 1000 }),
+      })
+    );
+    if (!res.ok) {
+      return { ok: false, error: "Could not store the secret." };
+    }
   } else {
     // In-memory fallback
     devStore.set(`secret:${id}`, {
@@ -119,7 +132,7 @@ export async function saveSecret(
 }
 
 /**
- * Retrieves ciphertext from KV and executes atomic burn-on-read if configured.
+ * Takes the ciphertext out of its vault; with burn-on-read the vault deletes it in the same atomic step.
  */
 export async function fetchAndBurnSecret(
   id: string
@@ -129,19 +142,20 @@ export async function fetchAndBurnSecret(
   }
 
   const key = `secret:${id}`;
-  const kv = getKvBinding();
+  const vault = getVault(id);
   let record: SecretRecord | null = null;
 
-  if (kv) {
-    record = await kv.get(key, "json");
-    if (!record) {
+  if (vault) {
+    const res = await vault.fetch(
+      new Request("https://vault/take", { method: "POST" })
+    );
+    if (res.status === 404) {
       return { ok: false, error: "burned_or_expired" };
     }
-
-    if (record.burnOnRead) {
-      // Atomic destruction immediately upon reading
-      await kv.delete(key);
+    if (!res.ok) {
+      return { ok: false, error: "server_error" };
     }
+    record = (await res.json()) as SecretRecord;
   } else {
     const entry = devStore.get(key);
     if (!entry) {
@@ -155,7 +169,7 @@ export async function fetchAndBurnSecret(
 
     record = entry.record;
     if (record.burnOnRead) {
-      // Atomic deletion from in-memory fallback
+      // Deletion from the in-memory fallback
       devStore.delete(key);
     }
   }

@@ -8,8 +8,8 @@ The secret is encrypted in your browser before it is sent, and the key never lea
 
 1. **Encrypted in the browser.** A random 256-bit AES-GCM key and a 96-bit IV are generated with the Web Crypto API (`crypto.subtle`). The plaintext is encrypted in memory and only the ciphertext is uploaded.
 2. **The key stays in the URL fragment.** The link looks like `https://pass.wzee.dev/s/<id>#key=<base64url key>`. Browsers never send the part after `#` to a server, so the key does not appear in request lines, headers or CDN logs.
-3. **Burn after reading.** Revealing a link is a Next.js Server Action (a POST), so link previews and crawlers cannot trigger it. With burn-on-read on, the ciphertext is deleted from Cloudflare KV in the same request that returns it.
-4. **Everything expires.** Each secret gets a lifetime of 5 minutes up to 7 days (the create form offers 1 hour, 24 hours and 7 days) through the KV `expirationTtl`.
+3. **Burn after reading.** Revealing a link is a Next.js Server Action (a POST), so link previews and crawlers cannot trigger it. With burn-on-read on, the ciphertext is deleted in the same atomic step that returns it. Each secret lives in its own [Durable Object](https://developers.cloudflare.com/durable-objects/) that runs and stores data only in the EU, so two quick opens can never both get it.
+4. **Everything expires.** Each secret gets a lifetime of 5 minutes up to 7 days (the create form offers 1 hour, 24 hours and 7 days) and an alarm on the Durable Object deletes everything at expiry.
 5. **No accounts, no tracking.** No cookies, analytics or IP logging.
 
 ### On this device
@@ -25,7 +25,7 @@ pnpm install
 pnpm --filter zeepass dev
 ```
 
-Without a Cloudflare KV binding (`next dev`, tests) secrets are kept in an in-memory map instead.
+Without the Durable Object binding (`next dev`, tests) secrets are kept in an in-memory map instead.
 
 ```bash
 pnpm --filter zeepass test          # crypto, server actions, history
@@ -45,13 +45,13 @@ pnpm --filter zeepass cf:deploy
 pnpm --filter zeepass deploy      # cf:deploy, then refreshes wzee.dev/tools
 ```
 
-`wrangler.jsonc` binds a KV namespace as `SECRETS_KV`. The `id` in the file (`zeepass-secrets-kv`) is a placeholder: create your own namespace with `npx wrangler kv namespace create SECRETS_KV` and put the id it prints in `wrangler.jsonc`. The route and name in the file are the wzee.dev deployment; change them for your own.
+`wrangler.jsonc` binds the `SecretVault` Durable Object class as `SECRETS` (one object per secret, EU jurisdiction) and points `main` at `worker.ts`, which re-exports the OpenNext worker and the class. There is nothing to create before deploying: the `v1` migration creates the class. The route and name in the file are the wzee.dev deployment; change them for your own.
 
 ## Where things are
 
 - `app/`: the create page, the reveal page (`/s/[id]`) and the server actions.
 - `lib/crypto`: AES-GCM encryption and key encoding.
-- `lib/secret`: storage (KV), validation, and the on-device history.
+- `lib/secret`: storage (the `SecretVault` Durable Object), validation, and the on-device history.
 - `lib/scramble.ts`: the text scramble used while a secret decrypts.
 - `components/secret`: the create form, the link card, the reveal card and the sidebar's nav and history.
 - The shell around it (sidebar, tokens, buttons, motion) comes from [`@zeetools/ui`](../../packages/ui).
