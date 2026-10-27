@@ -42,7 +42,7 @@ zeepass is built for Cloudflare with [OpenNext](https://opennext.js.org/cloudfla
 pnpm --filter zeepass cf:build     # builds into apps/zeepass/.open-next
 pnpm --filter zeepass cf:preview   # runs it locally
 pnpm --filter zeepass cf:deploy
-pnpm --filter zeepass deploy      # cf:deploy, then refreshes wzee.dev/tools
+pnpm --filter zeepass run deploy      # cf:deploy, then refreshes wzee.dev/tools
 ```
 
 `wrangler.jsonc` binds the `SecretVault` Durable Object class as `SECRETS` (one object per secret, EU jurisdiction) and points `main` at `worker.ts`, which re-exports the OpenNext worker and the class. There is nothing to create before deploying: the `v1` migration creates the class. The route and name in the file are the wzee.dev deployment; change them for your own.
