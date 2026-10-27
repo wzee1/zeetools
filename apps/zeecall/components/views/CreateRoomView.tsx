@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { ArrowRight, Monitor } from "lucide-react";
 import PageHeader from "@zeetools/ui/components/brand/page-header";
 import ShieldCheckIcon from "@zeetools/ui/components/icons/status/shield-check-icon";
@@ -16,8 +17,8 @@ import { BODY, CARD_FIT, FOOTER, SECTION } from "@/lib/card-classes";
 const FEATURES = [
   {
     icon: ShieldCheckIcon,
-    title: "Zero Cloud Logging",
-    body: "Room IDs exist solely in the URL hash fragment (#room). Edge servers never see or log your call keys.",
+    title: "No Media Through Servers",
+    body: "Calls and files go straight between browsers. To connect you, a signaling server relays the room ID and your display name, and Google's STUN server sees your IP address.",
   },
   {
     icon: Monitor,
@@ -37,8 +38,23 @@ interface CreateRoomViewProps {
   onCreate: (e?: React.FormEvent) => void;
 }
 
+const INTERACTIVE = 'input, textarea, select, button, a, summary, [contenteditable], [role="button"], [role="link"], [role="menuitem"]';
+
 /** The home view: what the tool does, a custom slug, and the one action that opens a room. */
 export default function CreateRoomView({ slug, onChangeSlug, onCreate }: CreateRoomViewProps) {
+  // Enter creates a room from anywhere on the page, unless it already means something where focus is.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Enter" || e.defaultPrevented || e.repeat || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+      if (e.target instanceof Element && e.target.closest(INTERACTIVE)) return;
+      if (document.querySelector('[role="dialog"]')) return;
+      e.preventDefault();
+      onCreate();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onCreate]);
+
   return (
     <Stagger className="flex flex-col gap-10 shell:min-h-0 shell:flex-1">
       <PageHeader title="Distraction-free video calls, raw WebRTC speed.">{zee.description}</PageHeader>

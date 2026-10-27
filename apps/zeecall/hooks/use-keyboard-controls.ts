@@ -4,29 +4,23 @@ import { useEffect, useRef } from "react";
 
 export interface UseKeyboardControlsOptions {
   enabled?: boolean;
-  onToggleMic?: () => void;
-  onToggleCamera?: () => void;
-  onToggleScreenShare?: () => void;
   onPushToTalkStart?: () => void;
   onPushToTalkEnd?: () => void;
-  onToggleFullscreen?: () => void;
-  onCopyInvite?: () => void;
-  onToggleFileDrop?: () => void;
   onEscape?: () => void;
 }
 
-export function useKeyboardControls({
-  enabled = true,
-  onToggleMic,
-  onToggleCamera,
-  onToggleScreenShare,
-  onPushToTalkStart,
-  onPushToTalkEnd,
-  onToggleFullscreen,
-  onCopyInvite,
-  onToggleFileDrop,
-  onEscape,
-}: UseKeyboardControlsOptions) {
+/** True while a key press lands in a field: the same rule as the shared hotkeys (use-hotkeys in @zeetools/ui). */
+function isTypingTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  return target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
+}
+
+/**
+ * The call keys the shared command system cannot carry: holding Space to talk, and Escape inside a field.
+ * Every other call key (M, V, S, F, ⌘C, ⌘D, ⌘S, and Escape outside a field) is a command registered in the
+ * page, so the hotkeys have one source and the "?" dialog lists them.
+ */
+export function useKeyboardControls({ enabled = true, onPushToTalkStart, onPushToTalkEnd, onEscape }: UseKeyboardControlsOptions) {
   const isHoldingSpaceRef = useRef(false);
 
   useEffect(() => {
@@ -44,28 +38,9 @@ export function useKeyboardControls({
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Allow Escape even inside input
+      // Escape works inside a field too; the command only fires outside one.
       if (e.key === "Escape") {
-        onEscape?.();
-        return;
-      }
-
-      // Cmd+C / Ctrl+C for copy invite
-      if ((e.metaKey || e.ctrlKey) && (e.key === "c" || e.key === "C")) {
-        // If text is selected in an input, let default copy happen
-        const selection = window.getSelection();
-        if (selection && selection.toString().length > 0) return;
-        if (onCopyInvite) {
-          e.preventDefault();
-          onCopyInvite();
-          return;
-        }
-      }
-
-      // Cmd+D / Ctrl+D for toggle file drop
-      if ((e.metaKey || e.ctrlKey) && (e.key === "d" || e.key === "D")) {
-        e.preventDefault();
-        onToggleFileDrop?.();
+        if (isTypingTarget(e.target)) onEscape?.();
         return;
       }
 
@@ -77,35 +52,6 @@ export function useKeyboardControls({
         e.preventDefault();
         isHoldingSpaceRef.current = true;
         onPushToTalkStart?.();
-        return;
-      }
-
-      // M: Toggle Mic
-      if (e.key === "m" || e.key === "M") {
-        e.preventDefault();
-        onToggleMic?.();
-        return;
-      }
-
-      // V: Toggle Camera
-      if (e.key === "v" || e.key === "V") {
-        e.preventDefault();
-        onToggleCamera?.();
-        return;
-      }
-
-      // S: Toggle Screen Share (4K mode)
-      if (e.key === "s" || e.key === "S") {
-        e.preventDefault();
-        onToggleScreenShare?.();
-        return;
-      }
-
-      // F: Toggle Fullscreen
-      if (e.key === "f" || e.key === "F") {
-        e.preventDefault();
-        onToggleFullscreen?.();
-        return;
       }
     };
 
@@ -124,16 +70,5 @@ export function useKeyboardControls({
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [
-    enabled,
-    onToggleMic,
-    onToggleCamera,
-    onToggleScreenShare,
-    onPushToTalkStart,
-    onPushToTalkEnd,
-    onToggleFullscreen,
-    onCopyInvite,
-    onToggleFileDrop,
-    onEscape,
-  ]);
+  }, [enabled, onPushToTalkStart, onPushToTalkEnd, onEscape]);
 }

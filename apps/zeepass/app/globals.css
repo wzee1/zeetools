@@ -1,0 +1,5 @@
+@import "tailwindcss";
+@import "@zeetools/ui/styles/tokens.css";
+
+/* Tailwind v4 does not scan workspace packages; this makes the @zeetools/ui classes exist. */
+@source "../../../packages/ui/src";

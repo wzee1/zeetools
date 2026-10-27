@@ -24,18 +24,24 @@ export type SignalingMessage =
     }
   | {
       type: "signal-offer";
+      /** Set by the sender; the receiver drops a second copy of the same id. */
+      id?: string;
       from: string;
       to: string;
       sdp: RTCSessionDescriptionInit;
     }
   | {
       type: "signal-answer";
+      /** Set by the sender; the receiver drops a second copy of the same id. */
+      id?: string;
       from: string;
       to: string;
       sdp: RTCSessionDescriptionInit;
     }
   | {
       type: "signal-candidate";
+      /** Set by the sender; the receiver drops a second copy of the same id. */
+      id?: string;
       from: string;
       to: string;
       candidate: RTCIceCandidateInit;

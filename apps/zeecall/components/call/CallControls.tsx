@@ -73,8 +73,8 @@ export default function CallControls({
         onClick={onToggleScreenShare}
         tone={isScreenSharing ? "on" : "neutral"}
         pressed={isScreenSharing}
-        title="4K Screen Share (S)"
-        label="4K Screen Share"
+        title={isScreenSharing ? "Stop Screen Share (S)" : "4K Screen Share (S)"}
+        label={isScreenSharing ? "Stop Screen Share" : "4K Screen Share"}
         hotkey="s"
       >
         <ScreenShare className="size-4" />
@@ -93,7 +93,7 @@ export default function CallControls({
       </DockButton>
 
       {/* Synced Notes / Scratchpad */}
-      <DockButton onClick={onToggleNotes} tone={isNotesOpen ? "on" : "neutral"} pressed={isNotesOpen} title="Call Notes" label="Meeting Notes">
+      <DockButton onClick={onToggleNotes} tone={isNotesOpen ? "on" : "neutral"} pressed={isNotesOpen} title="Call Notes" label="Call Notes">
         <FileIcon />
       </DockButton>
 

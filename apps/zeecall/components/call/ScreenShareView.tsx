@@ -2,12 +2,15 @@
 
 import { useRef } from "react";
 import { MonitorX } from "lucide-react";
+import MicIcon from "@zeetools/ui/components/icons/media/mic-icon";
 import { useStreamElement } from "@/hooks/use-stream-element";
 
 export interface ScreenShareViewProps {
   /** The shared screen: our own capture, or the presenter's stream when a peer shares. */
   screenStream: MediaStream;
   presenterName: string;
+  /** The presenter's microphone is off: the chip shows it, since their tile is not on screen. */
+  isAudioMuted?: boolean;
   /** Our own share: the preview stays muted (no echo of the captured audio) and gets the stop button. */
   isLocalSharing: boolean;
   onStopScreenShare?: () => void;
@@ -18,7 +21,7 @@ export interface ScreenShareViewProps {
 }
 
 /** A shared screen, whole (contained, never cropped), with the presenter chip on top. */
-export default function ScreenShareView({ screenStream, presenterName, isLocalSharing, onStopScreenShare, audioOutput, pip }: ScreenShareViewProps) {
+export default function ScreenShareView({ screenStream, presenterName, isLocalSharing, onStopScreenShare, audioOutput, pip, isAudioMuted = false }: ScreenShareViewProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   useStreamElement(videoRef, screenStream, { playsAudio: !isLocalSharing, audioOutput });
 
@@ -33,6 +36,7 @@ export default function ScreenShareView({ screenStream, presenterName, isLocalSh
         <span className="truncate font-medium">
           {presenterName}’s 4K Screen Share
         </span>
+        {isAudioMuted && <MicIcon muted className="size-3 shrink-0 text-red-400" />}
         {isLocalSharing && onStopScreenShare && (
           <button
             type="button"

@@ -284,7 +284,7 @@ export function useWebRtc({
           peers.forEach((p) => {
             peerNamesRef.current.set(p.id, p.name);
             if (localPeerRef.current && localPeerRef.current.id < p.id) {
-              initiateCallToPeer(p);
+              initiateCallToPeer(p).catch((err) => console.warn("Failed to call peer:", err));
             }
           });
         },
@@ -293,7 +293,7 @@ export function useWebRtc({
           // If our peer ID is lexicographically lower, we initiate the offer
           // This deterministic tie-breaking prevents offer collision
           if (localPeerRef.current && localPeerRef.current.id < remotePeer.id) {
-            initiateCallToPeer(remotePeer);
+            initiateCallToPeer(remotePeer).catch((err) => console.warn("Failed to call peer:", err));
           }
         },
         onPeerLeft: (peerId) => {
@@ -324,28 +324,36 @@ export function useWebRtc({
             pc = createPeerConnection(from, peerNamesRef.current.get(from) ?? "Peer");
           }
 
-          await pc.setRemoteDescription(new RTCSessionDescription(sdp));
-          await drainCandidateQueue(from, pc);
+          try {
+            await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+            await drainCandidateQueue(from, pc);
 
-          // Slots the offer created for kinds we had no track for start receive-only; open them both ways, so a
-          // camera or screen share added later only needs replaceTrack.
-          pc.getTransceivers().forEach((t) => {
-            if (t.direction === "recvonly") t.direction = "sendrecv";
-          });
-          syncTracksToPeerConnection(pc);
+            // Slots the offer created for kinds we had no track for start receive-only; open them both ways, so a
+            // camera or screen share added later only needs replaceTrack.
+            pc.getTransceivers().forEach((t) => {
+              if (t.direction === "recvonly") t.direction = "sendrecv";
+            });
+            syncTracksToPeerConnection(pc);
 
-          const answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
 
-          signalingRef.current?.sendAnswer(from, answer);
+            signalingRef.current?.sendAnswer(from, answer);
+          } catch (err) {
+            console.warn("Failed to answer offer:", err);
+          }
         },
         onAnswer: async (from, sdp) => {
           const pc = peerConnectionsRef.current.get(from);
           // Only an outstanding offer takes an answer; a repeated answer is ignored.
           if (!pc || pc.signalingState !== "have-local-offer") return;
 
-          await pc.setRemoteDescription(new RTCSessionDescription(sdp));
-          await drainCandidateQueue(from, pc);
+          try {
+            await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+            await drainCandidateQueue(from, pc);
+          } catch (err) {
+            console.warn("Failed to set remote answer:", err);
+          }
         },
         onCandidate: async (from, candidate) => {
           const pc = peerConnectionsRef.current.get(from);

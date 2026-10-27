@@ -97,6 +97,7 @@ export default function VideoTile({
           onClick={toggleTileFullscreen}
           className="p-1.5 rounded-control bg-black/60 text-white/85 hover:text-white hover:bg-black/75 backdrop-blur-md border border-white/15 transition-colors duration-200 ease-out cursor-pointer"
           title="Toggle Fullscreen"
+          aria-label="Toggle Fullscreen"
         >
           {isFullscreen ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
         </button>
