@@ -8,7 +8,7 @@ export const zee = {
   status: "live" as "live" | "beta" | "in-progress",
   // Hungarian name and description; whatever is left out shows in English.
   translations: {
-    hu: { description: "Helyi, adatvédelmet szem előtt tartó kötegelt képfeldolgozó csomag." },
+    hu: { description: "Biztonságos, közvetlenül a böngészőben futó tömeges képszerkesztő." },
   } as { hu?: { name?: string; description?: string } },
   // This app's code, shown as a "Source" link on wzee.dev/tools; empty shows none.
   source: "https://github.com/wzee1/zeetools/tree/main/apps/zeeimage" as string,

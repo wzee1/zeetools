@@ -9,7 +9,7 @@ export const zee = {
   status: "live" as "live" | "beta" | "in-progress",
   // Hungarian name and description; whatever is left out shows in English.
   translations: {
-    hu: { description: "Efemer, önmegsemmisítő titok- és .env megosztó kliensoldali AES-GCM 256 bites titkosítással." },
+    hu: { description: "Önmegsemmisítő belépési adatok és .env fájlok biztonságos megosztása, kliensoldali 256 bites AES-GCM titkosítással." },
   } as { hu?: { name?: string; description?: string } },
   // This app's code, shown as a "Source" link on wzee.dev/tools; empty shows none.
   source: "https://github.com/wzee1/zeetools/tree/main/apps/zeepass" as string,

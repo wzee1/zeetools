@@ -8,7 +8,7 @@ export const zee = {
   status: "live" as "live" | "beta" | "in-progress",
   // Hungarian name and description; whatever is left out shows in English.
   translations: {
-    hu: { description: "Fiók nélküli, titkosított, közvetlen P2P videohívás, 4K képernyőmegosztás és fájlküldés." },
+    hu: { description: "Titkosított, böngészők közötti közvetlen videohívás, 4K képernyőmegosztás és fájlküldés - regisztráció nélkül." },
   } as { hu?: { name?: string; description?: string } },
   // This app's code, shown as a "Source" link on wzee.dev/tools; empty shows none.
   source: "https://github.com/wzee1/zeetools/tree/main/apps/zeecall" as string,
