@@ -1,0 +1,12 @@
+// zeeimage is a static export (next build writes it to out/), served by Workers static assets.
+// New Cloudflare Pages projects now become Workers, so this replaces the old `wrangler pages deploy`.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "zeeimage",
+  "compatibility_date": "2026-10-01",
+  // The zone wzee.dev is on the same account, so the first deploy creates this subdomain's DNS record.
+  "routes": [{ "pattern": "image.wzee.dev", "custom_domain": true }],
+  "assets": { "directory": "./out", "not_found_handling": "404-page" },
+  "workers_dev": false,
+  "observability": { "enabled": false }
+}
