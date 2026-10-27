@@ -53,5 +53,4 @@ cypress/videos/
 cypress/downloads/
 
 # zeepass and zeeimage live in apps/ locally but aren't published yet; remove these lines to add them back
-apps/zeepass/
 apps/zeeimage/
