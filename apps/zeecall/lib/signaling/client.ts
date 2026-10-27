@@ -1,3 +1,5 @@
+import { randomId } from "@/lib/room";
+import { createSeenFilter } from "./dedup";
 import { PeerInfo, SignalingMessage } from "./types";
 
 export type SignalingStatus = "idle" | "connecting" | "connected" | "fallback-local" | "disconnected";
@@ -25,6 +27,8 @@ export class SignalingClient {
   private reconnectTimeout: number | null = null;
   private knownLocalPeers: Map<string, PeerInfo> = new Map();
   private isExplicitlyClosed: boolean = false;
+  // Offers, answers and candidates arrive twice in the same browser (worker and local channel).
+  private seenSignals = createSeenFilter();
 
   constructor(
     private handlers: SignalingClientHandlers = {},
@@ -39,6 +43,7 @@ export class SignalingClient {
     this.room = room;
     this.localPeer = peer;
     this.isExplicitlyClosed = false;
+    this.seenSignals.clear();
     this.setStatus("connecting");
 
     // Initialize BroadcastChannel for immediate same-origin multi-tab local mesh fallback
@@ -184,19 +189,19 @@ export class SignalingClient {
         break;
 
       case "signal-offer":
-        if (msg.to === this.localPeer?.id) {
+        if (msg.to === this.localPeer?.id && this.isFirstCopy(msg)) {
           this.handlers.onOffer?.(msg.from, msg.sdp);
         }
         break;
 
       case "signal-answer":
-        if (msg.to === this.localPeer?.id) {
+        if (msg.to === this.localPeer?.id && this.isFirstCopy(msg)) {
           this.handlers.onAnswer?.(msg.from, msg.sdp);
         }
         break;
 
       case "signal-candidate":
-        if (msg.to === this.localPeer?.id) {
+        if (msg.to === this.localPeer?.id && this.isFirstCopy(msg)) {
           this.handlers.onCandidate?.(msg.from, msg.candidate);
         }
         break;
@@ -210,10 +215,15 @@ export class SignalingClient {
     }
   }
 
+  private isFirstCopy(msg: { id?: string }): boolean {
+    return !msg.id || this.seenSignals.isNew(msg.id);
+  }
+
   public sendOffer(to: string, sdp: RTCSessionDescriptionInit): void {
     if (!this.localPeer) return;
     const msg: SignalingMessage = {
       type: "signal-offer",
+      id: randomId(12),
       from: this.localPeer.id,
       to,
       sdp,
@@ -225,6 +235,7 @@ export class SignalingClient {
     if (!this.localPeer) return;
     const msg: SignalingMessage = {
       type: "signal-answer",
+      id: randomId(12),
       from: this.localPeer.id,
       to,
       sdp,
@@ -236,6 +247,7 @@ export class SignalingClient {
     if (!this.localPeer) return;
     const msg: SignalingMessage = {
       type: "signal-candidate",
+      id: randomId(12),
       from: this.localPeer.id,
       to,
       candidate,

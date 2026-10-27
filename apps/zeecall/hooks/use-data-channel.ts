@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { randomId } from "@/lib/room";
+import { buildNotesMarkdown } from "@/lib/notes";
 import {
   CHUNK_SIZE,
   encodeChunkPacket,
@@ -18,6 +19,12 @@ interface NotesSyncPayload {
   senderName: string;
 }
 
+/** A participant's microphone and camera, as they tell their peers. */
+export interface MediaState {
+  audioMuted: boolean;
+  videoOff: boolean;
+}
+
 /** What happened to a file a peer sent: it waits in memory until the user saves or discards it. */
 export type ReceivedFileState = "pending" | "saved" | "discarded";
 
@@ -31,8 +38,13 @@ export function useDataChannel({ localPeerName, roomName }: UseDataChannelOption
   const receiverManagerRef = useRef<FileReceiverManager>(new FileReceiverManager());
 
   const [activeTransfers, setActiveTransfers] = useState<FileTransferProgress[]>([]);
-  const [notes, setNotes] = useState<string>("# Meeting Scratchpad\n\n- Quick sync notes...\n- Action items:\n  - [ ] ");
-  const [lastNotesUpdatedAt, setLastNotesUpdatedAt] = useState<number>(0);
+  const [notes, setNotes] = useState<string>("");
+  // 0 until the pad is edited here or a peer's edit arrives: an untouched pad never overwrites anyone's notes.
+  const notesUpdatedAtRef = useRef(0);
+  const notesRef = useRef("");
+  // What each peer says about their microphone and camera (a tile shows it).
+  const [peerMedia, setPeerMedia] = useState<Record<string, MediaState>>({});
+  const localMediaRef = useRef<MediaState | null>(null);
   const [receivedFiles, setReceivedFiles] = useState<Record<string, ReceivedFileState>>({});
   // Peers sharing their screen; a share replaces their camera track, so the receiver has to be told.
   const [sharingPeerIds, setSharingPeerIds] = useState<string[]>([]);
@@ -45,6 +57,24 @@ export function useDataChannel({ localPeerName, roomName }: UseDataChannelOption
     if (localSharingRef.current && channel.readyState === "open") {
       channel.send(JSON.stringify({ type: "screen-share", active: true }));
     }
+    // A newcomer learns our mic and camera, and any notes written so far, as soon as the channel opens.
+    const sendHello = () => {
+      try {
+        if (localMediaRef.current) channel.send(JSON.stringify({ type: "media-state", ...localMediaRef.current }));
+        if (notesUpdatedAtRef.current > 0) {
+          const payload: NotesSyncPayload = {
+            type: "notes-sync",
+            content: notesRef.current,
+            updatedAt: notesUpdatedAtRef.current,
+            senderName: localPeerName,
+          };
+          channel.send(JSON.stringify(payload));
+        }
+      } catch {
+        // ignore
+      }
+    };
+    if (channel.readyState === "open") sendHello();
 
     channel.onmessage = (event) => {
       if (typeof event.data === "string") {
@@ -74,13 +104,14 @@ export function useDataChannel({ localPeerName, roomName }: UseDataChannelOption
             setSharingPeerIds((prev) => (active ? [...prev.filter((id) => id !== peerId), peerId] : prev.filter((id) => id !== peerId)));
           } else if (parsed.type === "notes-sync") {
             const sync = parsed as NotesSyncPayload;
-            setNotes((prevNotes) => {
-              if (sync.updatedAt > lastNotesUpdatedAt) {
-                setLastNotesUpdatedAt(sync.updatedAt);
-                return sync.content;
-              }
-              return prevNotes;
-            });
+            if (typeof sync.content === "string" && sync.updatedAt > notesUpdatedAtRef.current) {
+              notesUpdatedAtRef.current = sync.updatedAt;
+              notesRef.current = sync.content;
+              setNotes(sync.content);
+            }
+          } else if (parsed.type === "media-state") {
+            const state: MediaState = { audioMuted: parsed.audioMuted === true, videoOff: parsed.videoOff === true };
+            setPeerMedia((prev) => ({ ...prev, [peerId]: state }));
           }
         } catch {
           // ignore invalid json
@@ -109,7 +140,7 @@ export function useDataChannel({ localPeerName, roomName }: UseDataChannelOption
         );
       }
     };
-  }, [lastNotesUpdatedAt]);
+  }, [localPeerName]);
 
   // Unregister channel
   const unregisterDataChannel = useCallback((peerId: string) => {
@@ -123,6 +154,27 @@ export function useDataChannel({ localPeerName, roomName }: UseDataChannelOption
     }
     channelsRef.current.delete(peerId);
     setSharingPeerIds((prev) => prev.filter((id) => id !== peerId));
+    setPeerMedia((prev) => {
+      if (!(peerId in prev)) return prev;
+      const rest = { ...prev };
+      delete rest[peerId];
+      return rest;
+    });
+  }, []);
+
+  // Tell every peer whether our microphone and camera are on
+  const announceMediaState = useCallback((state: MediaState) => {
+    localMediaRef.current = state;
+    const msg = JSON.stringify({ type: "media-state", ...state });
+    channelsRef.current.forEach((ch) => {
+      if (ch.readyState === "open") {
+        try {
+          ch.send(msg);
+        } catch {
+          // ignore
+        }
+      }
+    });
   }, []);
 
   // Tell every peer whether we are sharing our screen now
@@ -237,7 +289,8 @@ export function useDataChannel({ localPeerName, roomName }: UseDataChannelOption
     (newContent: string) => {
       const now = Date.now();
       setNotes(newContent);
-      setLastNotesUpdatedAt(now);
+      notesRef.current = newContent;
+      notesUpdatedAtRef.current = now;
 
       const payload: NotesSyncPayload = {
         type: "notes-sync",
@@ -262,29 +315,17 @@ export function useDataChannel({ localPeerName, roomName }: UseDataChannelOption
 
   // Export Notes to Markdown file
   const exportNotesAsMarkdown = useCallback(
-    (callDurationSeconds: number, attendeeNames: string[]) => {
+    (callDurationSeconds: number, remoteNames: string[]) => {
       const dateStr = new Date().toISOString().split("T")[0];
-      const minutes = Math.floor(callDurationSeconds / 60);
-      const seconds = callDurationSeconds % 60;
-      const durationStr = `${minutes}m ${seconds}s`;
 
-      const markdownContent = [
-        `# zeecall Meeting Summary — ${dateStr}`,
-        ``,
-        `- **Room**: ${roomName || "Private Call"}`,
-        `- **Duration**: ${durationStr}`,
-        `- **Attendees**: ${attendeeNames.length > 0 ? attendeeNames.join(", ") : localPeerName}`,
-        `- **Timestamp**: ${new Date().toLocaleString()}`,
-        ``,
-        `---`,
-        ``,
-        `## Meeting Notes`,
-        ``,
+      const markdownContent = buildNotesMarkdown({
+        roomName,
+        durationSeconds: callDurationSeconds,
+        attendees: [localPeerName, ...remoteNames],
         notes,
-        ``,
-        `---`,
-        `*Generated by [zeecall](https://call.wzee.dev) — Zero-account WebRTC conferencing*`,
-      ].join("\n");
+        date: dateStr,
+        timestamp: new Date().toLocaleString(),
+      });
 
       const blob = new Blob([markdownContent], { type: "text/markdown;charset=utf-8" });
       const url = URL.createObjectURL(blob);
@@ -311,6 +352,8 @@ export function useDataChannel({ localPeerName, roomName }: UseDataChannelOption
     discardFile,
     sharingPeerIds,
     announceScreenShare,
+    peerMedia,
+    announceMediaState,
     registerDataChannel,
     unregisterDataChannel,
   };

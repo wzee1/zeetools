@@ -90,11 +90,31 @@ export function useMediaStream() {
     [localStream, selectedAudioDevice, selectedVideoDevice, refreshDevices, setupAudioAnalyser, cleanAudioAnalyser]
   );
 
+  // A track that ends by itself (the camera permission is revoked, a device is unplugged) counts as off.
+  useEffect(() => {
+    if (!localStream) return;
+    const cleanups = localStream.getTracks().map((track) => {
+      const onEnded = () => {
+        if (track.kind === "audio") {
+          setIsAudioMuted(true);
+          setMicLevel(0);
+        } else {
+          setIsVideoOff(true);
+        }
+      };
+      if (track.readyState === "ended") onEnded();
+      track.addEventListener("ended", onEnded);
+      return () => track.removeEventListener("ended", onEnded);
+    });
+    return () => cleanups.forEach((cleanup) => cleanup());
+  }, [localStream]);
+
   // Toggle microphone
   const toggleAudio = useCallback(() => {
     if (!localStream) return;
     const audioTracks = localStream.getAudioTracks();
-    if (audioTracks.length === 0) return;
+    // A dead track cannot be switched back on; it stays muted until the device is opened again.
+    if (audioTracks.length === 0 || audioTracks.every((track) => track.readyState === "ended")) return;
     const nextState = !isAudioMuted;
 
     audioTracks.forEach((track) => {
@@ -111,6 +131,7 @@ export function useMediaStream() {
   const setAudioMuted = useCallback(
     (muted: boolean) => {
       if (!localStream) return;
+      if (!muted && localStream.getAudioTracks().every((track) => track.readyState === "ended")) return;
       localStream.getAudioTracks().forEach((track) => {
         track.enabled = !muted;
       });
@@ -124,7 +145,7 @@ export function useMediaStream() {
   const toggleVideo = useCallback(() => {
     if (!localStream) return;
     const videoTracks = localStream.getVideoTracks();
-    if (videoTracks.length === 0) return;
+    if (videoTracks.length === 0 || videoTracks.every((track) => track.readyState === "ended")) return;
     const nextState = !isVideoOff;
 
     videoTracks.forEach((track) => {

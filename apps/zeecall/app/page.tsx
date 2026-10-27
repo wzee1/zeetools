@@ -13,6 +13,8 @@ import { useDialogAtEscape } from "@/hooks/use-dialog-at-escape";
 import { useHashRoom } from "@/hooks/use-hash-room";
 import { useRoomHistory } from "@/hooks/use-room-history";
 import { useWindowFileDrop } from "@/hooks/use-window-file-drop";
+import { Copy, Download, Maximize, Mic, PhoneOff, ScreenShare, Upload, Video } from "lucide-react";
+import { useCommands } from "@zeetools/ui/components/commands/commands";
 import { cn } from "@zeetools/ui/lib/utils";
 import { generateRoomSlug, randomId } from "@/lib/room";
 import CreateRoomView from "@/components/views/CreateRoomView";
@@ -101,6 +103,8 @@ export default function ZeeCallPage() {
     discardFile,
     sharingPeerIds,
     announceScreenShare,
+    peerMedia,
+    announceMediaState,
     registerDataChannel,
     unregisterDataChannel,
   } = useDataChannel({
@@ -136,6 +140,11 @@ export default function ZeeCallPage() {
   useEffect(() => {
     announceScreenShare(isScreenSharing);
   }, [isScreenSharing, announceScreenShare]);
+
+  // Peers are told when our microphone or camera changes (push-to-talk included, so a held Space shows as unmuted).
+  useEffect(() => {
+    announceMediaState({ audioMuted: isAudioMuted, videoOff: isVideoOff });
+  }, [isAudioMuted, isVideoOff, announceMediaState]);
 
   // Call duration counter (runs while the call is live, on screen or not)
   useEffect(() => {
@@ -197,9 +206,17 @@ export default function ZeeCallPage() {
     setIsNotesOpen(false);
     setIsSettingsOpen(false);
     if (typeof window !== "undefined") {
-      window.location.hash = "";
+      // Assigning an empty hash would leave "/#" behind. pushState fires no hashchange, so say so ourselves.
+      window.history.pushState(null, "", window.location.pathname + window.location.search);
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
     }
   }, [leaveRoom, stopAll]);
+
+  const exportCallNotes = () =>
+    exportNotesAsMarkdown(
+      callDuration,
+      remotePeers.map((p) => p.name)
+    );
 
   // Copy Invite link
   const roomInviteUrl = typeof window !== "undefined"
@@ -211,12 +228,65 @@ export default function ZeeCallPage() {
   // Whether a dialog that is not one of the call's panels (palette, shortcuts, phone drawer) took this Escape.
   const dialogAtEscapeRef = useDialogAtEscape(inCall);
 
-  // Keyboard Shortcuts Handler
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  };
+
+  // The command takes over the copy key, so a selection (in the notes, say) is copied here instead of the invite.
+  const copyInviteOrSelection = () => {
+    const el = document.activeElement;
+    let selected = window.getSelection()?.toString() ?? "";
+    if (!selected && (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) {
+      selected = el.value.slice(el.selectionStart ?? 0, el.selectionEnd ?? 0);
+    }
+    if (selected) navigator.clipboard?.writeText(selected).catch(() => {});
+    else handleCopyInvite();
+  };
+
+  const handleEscape = () => {
+    if (isFileDropOpen) setIsFileDropOpen(false);
+    else if (isNotesOpen) setIsNotesOpen(false);
+    else if (isSettingsOpen) setIsSettingsOpen(false);
+    else if (!dialogAtEscapeRef.current) setConfirm("leave");
+  };
+
+  // The call keys, as shared commands: they bind the hotkeys (outside text fields, except the ⌘ ones) and fill the
+  // "?" dialog. Only Space (hold) and Escape inside a field are left to useKeyboardControls.
+  useCommands(
+    inCall
+      ? [
+          { id: "zeecall.mic", label: "Mute or unmute microphone", group: "Call", hotkey: "m", icon: Mic, keywords: ["mute", "audio"], run: toggleAudio },
+          { id: "zeecall.camera", label: "Turn camera on or off", group: "Call", hotkey: "v", icon: Video, keywords: ["video"], run: toggleVideo },
+          { id: "zeecall.screen", label: "Start or stop screen share", group: "Call", hotkey: "s", icon: ScreenShare, keywords: ["present"], run: toggleScreenShare },
+          // The key is "space" only for the listing: held-key handling lives in useKeyboardControls, so this never matches.
+          // Picked from the ⌘K menu, where nothing can be held, it toggles the microphone instead.
+          { id: "zeecall.talk", label: "Push to talk (hold while muted)", group: "Call", hotkey: "space", icon: Mic, run: toggleAudio },
+          { id: "zeecall.fullscreen", label: "Toggle fullscreen", group: "Call", hotkey: "f", icon: Maximize, run: toggleFullscreen },
+          { id: "zeecall.invite", label: "Copy invite link", group: "Call", hotkey: "mod+c", icon: Copy, run: copyInviteOrSelection },
+          { id: "zeecall.files", label: "Open or close file drop", group: "Call", hotkey: "mod+d", icon: Upload, run: () => setIsFileDropOpen((prev) => !prev) },
+          {
+            id: "zeecall.export",
+            label: "Export call notes",
+            group: "Call",
+            hotkey: "mod+s",
+            icon: Download,
+            // With the notes open, the panel handles this key itself (it shows "Exported!").
+            run: () => {
+              if (!isNotesOpen) exportCallNotes();
+            },
+          },
+          { id: "zeecall.leave", label: "Leave call", group: "Call", hotkey: "escape", icon: PhoneOff, run: handleEscape },
+        ]
+      : [],
+  );
+
+  // Hold Space to talk; Escape in a field
   useKeyboardControls({
     enabled: inCall,
-    onToggleMic: toggleAudio,
-    onToggleCamera: toggleVideo,
-    onToggleScreenShare: toggleScreenShare,
     onPushToTalkStart: () => {
       wasMutedBeforePushRef.current = isAudioMuted;
       if (isAudioMuted) {
@@ -228,21 +298,7 @@ export default function ZeeCallPage() {
         setAudioMuted(true);
       }
     },
-    onToggleFullscreen: () => {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      } else {
-        document.exitFullscreen().catch(() => {});
-      }
-    },
-    onCopyInvite: handleCopyInvite,
-    onToggleFileDrop: () => setIsFileDropOpen((prev) => !prev),
-    onEscape: () => {
-      if (isFileDropOpen) setIsFileDropOpen(false);
-      else if (isNotesOpen) setIsNotesOpen(false);
-      else if (isSettingsOpen) setIsSettingsOpen(false);
-      else if (!dialogAtEscapeRef.current) setConfirm("leave");
-    },
+    onEscape: handleEscape,
   });
 
   // Files dropped anywhere on the window in a call go to the peer (and never open in the tab).
@@ -320,7 +376,11 @@ export default function ZeeCallPage() {
               grid={{
                 localStream,
                 screenStream,
-                remotePeers,
+                remotePeers: remotePeers.map((p) => ({
+                  ...p,
+                  isAudioMuted: peerMedia[p.id]?.audioMuted,
+                  isVideoOff: peerMedia[p.id]?.videoOff,
+                })),
                 localName: displayName,
                 isAudioMuted,
                 isVideoOff,
@@ -360,12 +420,9 @@ export default function ZeeCallPage() {
                 onClose: () => setIsNotesOpen(false),
                 notes,
                 onUpdateNotes: updateNotes,
-                onExportNotes: () =>
-                  exportNotesAsMarkdown(
-                    callDuration,
-                    remotePeers.map((p) => p.name)
-                  ),
+                onExportNotes: exportCallNotes,
                 callDurationSeconds: callDuration,
+                isSynced: remotePeers.some((p) => p.connectionState === "connected"),
               }}
               settings={{
                 isOpen: isSettingsOpen,

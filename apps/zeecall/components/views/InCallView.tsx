@@ -30,7 +30,7 @@ interface InCallViewProps {
 export default function InCallView({ roomName, stats, signalingStatus, isDragging, grid, controls, fileDrop, notes, settings }: InCallViewProps) {
   return (
     <Stagger className="flex flex-col gap-10 shell:min-h-0 shell:flex-1">
-      <PageHeader title={`Room #${roomName}`} aside={<ConnectionQuality stats={stats} signalingStatus={signalingStatus} />} />
+      <PageHeader title={`Room #${roomName}`} aside={<ConnectionQuality stats={stats} signalingStatus={signalingStatus} peerCount={grid.remotePeers.length} />} />
 
       <StaggerItem className="flex flex-col shell:min-h-0 shell:flex-1">
         <Card className={CARD} data-dragging={isDragging || undefined}>

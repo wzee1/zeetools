@@ -102,11 +102,18 @@ export default function VideoGrid({
     return (
       <div className={cn(surface, "shell:flex-row")}>
         {presenter ? (
-          <ScreenShareView screenStream={presenter.stream} presenterName={presenter.name} isLocalSharing={false} audioOutput={audioOutput} />
+          <ScreenShareView
+            screenStream={presenter.stream}
+            presenterName={presenter.name}
+            isAudioMuted={presenter.isAudioMuted}
+            isLocalSharing={false}
+            audioOutput={audioOutput}
+          />
         ) : (
           <ScreenShareView
             screenStream={screenStream!}
             presenterName={localName}
+            isAudioMuted={isAudioMuted}
             isLocalSharing
             onStopScreenShare={onStopScreenShare}
             pip={
