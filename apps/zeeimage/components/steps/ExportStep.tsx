@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { ProcessResult, ProcessOptions } from '@/lib/processors/strategy';
-import { formatOutputFilename, resolveOutputFormat } from '@/lib/processors/client-worker';
+import { formatOutputFilename, resolveOutputFormat, uniqueFilenames } from '@/lib/processors/client-worker';
 import { useZipExporter } from '@/hooks/use-zip-exporter';
 import { downloadBlob } from '@zeetools/ui/lib/export';
 import Tick from '@/components/motion/tick';
@@ -31,6 +31,23 @@ export default function ExportStep({ results, options, onReset }: ExportStepProp
     [results]
   );
 
+  // The same names the ZIP uses, unique within the batch.
+  const outputNames = useMemo(
+    () =>
+      uniqueFilenames(
+        successfulResults.map((res) =>
+          formatOutputFilename(
+            res.originalFile.name,
+            options.filenameTemplate,
+            res.dimensions.width,
+            res.dimensions.height,
+            resolveOutputFormat(res.processedBlob, options.format)
+          )
+        )
+      ),
+    [successfulResults, options]
+  );
+
   const totalOrigSize = successfulResults.reduce((sum, r) => sum + r.originalSize, 0);
   const totalNewSize = successfulResults.reduce((sum, r) => sum + r.processedSize, 0);
   const totalSavedBytes = Math.max(0, totalOrigSize - totalNewSize);
@@ -38,18 +55,11 @@ export default function ExportStep({ results, options, onReset }: ExportStepProp
     totalOrigSize > 0 ? Math.round((totalSavedBytes / totalOrigSize) * 100) : 0;
 
   const handleDownloadSingle = useCallback(
-    (res: ProcessResult) => {
-      const filename = formatOutputFilename(
-        res.originalFile.name,
-        options.filenameTemplate,
-        res.dimensions.width,
-        res.dimensions.height,
-        resolveOutputFormat(res.processedBlob, options.format)
-      );
+    (res: ProcessResult, filename: string) => {
       downloadBlob(res.processedBlob, filename);
       setDownloadedIds((prev) => new Set(prev).add(res.id));
     },
-    [options]
+    []
   );
 
   const handleDownloadAllZip = () => {
@@ -94,14 +104,8 @@ export default function ExportStep({ results, options, onReset }: ExportStepProp
         </h4>
 
         <div className={SCROLLER}>
-          {successfulResults.map((res) => {
-            const outputName = formatOutputFilename(
-              res.originalFile.name,
-              options.filenameTemplate,
-              res.dimensions.width,
-              res.dimensions.height,
-              resolveOutputFormat(res.processedBlob, options.format)
-            );
+          {successfulResults.map((res, i) => {
+            const outputName = outputNames[i];
 
             const isDownloaded = downloadedIds.has(res.id);
             const savings =
@@ -130,7 +134,7 @@ export default function ExportStep({ results, options, onReset }: ExportStepProp
 
                 <Button
                   variant="secondary"
-                  onClick={() => handleDownloadSingle(res)}
+                  onClick={() => handleDownloadSingle(res, outputName)}
                   className="shrink-0"
                 >
                   {isDownloaded ? <CheckIcon className="text-success" /> : <DownloadIcon />}

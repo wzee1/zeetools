@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ClientWorkerProcessor,
   formatOutputFilename,
+  uniqueFilenames,
   insertNameToken,
   resolveOutputFormat,
 } from './client-worker';
@@ -144,5 +145,20 @@ describe('formatOutputFilename extension', () => {
   it('does not double the extension', () => {
     expect(formatOutputFilename('photo.png', '[name].webp', 10, 10, 'image/webp')).toBe('photo.webp');
     expect(formatOutputFilename('photo.png', '[name].[ext]', 10, 10, 'image/jpeg')).toBe('photo.jpg');
+  });
+});
+
+describe('uniqueFilenames', () => {
+  it('keeps distinct names and numbers repeats before the extension', () => {
+    expect(uniqueFilenames(['photo-800x800.webp', 'photo-800x800.webp', 'logo.webp', 'PHOTO-800x800.webp'])).toEqual([
+      'photo-800x800.webp',
+      'photo-800x800-2.webp',
+      'logo.webp',
+      'PHOTO-800x800-3.webp',
+    ]);
+  });
+
+  it('does not collide with a name that already ends in -2', () => {
+    expect(uniqueFilenames(['a.png', 'a-2.png', 'a.png'])).toEqual(['a.png', 'a-2.png', 'a-3.png']);
   });
 });

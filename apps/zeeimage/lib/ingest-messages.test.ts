@@ -21,10 +21,10 @@ describe('copy helpers', () => {
   });
 
   it('describes failures', () => {
-    expect(describeFailure('The source image could not be decoded.')).toBe('Unsupported in this browser');
+    expect(describeFailure('The source image could not be decoded.')).toBe("Couldn't read this image");
     expect(describeFailure('Canvas export failed')).toBe('Canvas export failed');
     expect(failureSummary(['The source image could not be decoded.', 'The source image could not be decoded.'])).toBe(
-      '2 failed: Unsupported in this browser'
+      "2 failed: Couldn't read this image"
     );
   });
 });

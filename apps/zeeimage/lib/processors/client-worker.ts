@@ -45,6 +45,20 @@ export function formatOutputFilename(
   return name.toLowerCase().endsWith(`.${ext}`) ? name : `${name}.${ext}`;
 }
 
+/** Makes a batch's output names unique ("photo.webp", "photo-2.webp") so no file overwrites another in the ZIP. */
+export function uniqueFilenames(names: string[]): string[] {
+  const used = new Set<string>();
+  return names.map((name) => {
+    const dot = name.lastIndexOf('.');
+    const stem = dot > 0 ? name.slice(0, dot) : name;
+    const ext = dot > 0 ? name.slice(dot) : '';
+    let candidate = name;
+    for (let n = 2; used.has(candidate.toLowerCase()); n++) candidate = `${stem}-${n}${ext}`;
+    used.add(candidate.toLowerCase());
+    return candidate;
+  });
+}
+
 const TRAILING_EXT = '.[ext]';
 
 /** Adds a token to a naming template, keeping a trailing ".[ext]" last. */

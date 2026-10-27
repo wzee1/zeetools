@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { ProcessResult, ProcessOptions } from '../lib/processors/strategy';
-import { formatOutputFilename, resolveOutputFormat } from '../lib/processors/client-worker';
+import { formatOutputFilename, resolveOutputFormat, uniqueFilenames } from '../lib/processors/client-worker';
 import { createZipArchive, ZipEntry } from '../lib/zip';
 import { downloadBlob } from '@zeetools/ui/lib/export';
 
@@ -22,21 +22,19 @@ export function useZipExporter() {
       setExportProgress(0);
 
       try {
-        const entries: ZipEntry[] = results
-          .filter((res) => !res.error && res.processedBlob.size > 0)
-          .map((res) => {
-            const fileName = formatOutputFilename(
+        const done = results.filter((res) => !res.error && res.processedBlob.size > 0);
+        const names = uniqueFilenames(
+          done.map((res) =>
+            formatOutputFilename(
               res.originalFile.name,
               options.filenameTemplate,
               res.dimensions.width,
               res.dimensions.height,
               resolveOutputFormat(res.processedBlob, options.format)
-            );
-            return {
-              name: fileName,
-              data: res.processedBlob,
-            };
-          });
+            )
+          )
+        );
+        const entries: ZipEntry[] = done.map((res, i) => ({ name: names[i], data: res.processedBlob }));
 
         const zipBlob = await createZipArchive(entries, (processed, total) => {
           setExportProgress(Math.round((processed / total) * 100));
