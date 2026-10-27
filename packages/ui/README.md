@@ -140,7 +140,7 @@ export default function AppNav() {
 }
 ```
 
-A `group` is any node, usually a `SidebarGroup` with a list inside. Slots that read the URL with `useSearchParams` are fine: the sidebar renders them inside a `Suspense` boundary, so the page stays static.
+A `group` is any node, usually a `SidebarGroup` with a list inside (see zeepass's `SecretHistory`). Slots that read the URL with `useSearchParams` are fine: the sidebar renders them inside a `Suspense` boundary, so the page stays static.
 
 ## Public API
 
