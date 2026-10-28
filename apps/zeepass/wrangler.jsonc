@@ -12,5 +12,11 @@
     "bindings": [{ "name": "SECRETS", "class_name": "SecretVault" }]
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["SecretVault"] }],
+  // Per-IP limits, checked in the server actions before any Durable Object is called. The limits here have to match
+  // LIMITS in lib/secret/rate-limit.ts. namespace_id must be unique on the Cloudflare account (1002 is the contact API).
+  "ratelimits": [
+    { "name": "CREATE_LIMITER", "namespace_id": "1003", "simple": { "limit": 10, "period": 60 } },
+    { "name": "REVEAL_LIMITER", "namespace_id": "1004", "simple": { "limit": 30, "period": 60 } }
+  ],
   "observability": { "enabled": false }
 }

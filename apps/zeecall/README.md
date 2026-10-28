@@ -33,7 +33,7 @@ pnpm --filter zeecall build     # static export into apps/zeecall/out
 
 The app is a static export (`output: "export"`); the signaling worker is deployed separately.
 
-`pnpm --filter zeecall run deploy` builds the app, uploads `out` to the `zeecall` Cloudflare Pages project (production, served at call.wzee.dev) and refreshes wzee.dev/tools.
+`pnpm --filter zeecall run deploy` builds the app, uploads `out` to the `zeecall` Cloudflare Pages project (production, served at call.wzee.dev).
 
 The signaling worker keeps each room in a Durable Object (a plain Worker cannot pass messages between two requests' sockets). To run it next to the dev server, from `apps/zeecall`:
 
@@ -41,6 +41,8 @@ The signaling worker keeps each room in a Durable Object (a plain Worker cannot 
 npx wrangler dev -c worker/wrangler.jsonc
 NEXT_PUBLIC_SIGNALING_URL=ws://localhost:8787 pnpm --filter zeecall dev
 ```
+
+`worker/wrangler.jsonc` also declares a `ratelimits` binding, `JOIN_LIMITER`, that limits each IP to 20 WebSocket upgrades a minute; over that the worker answers 429 before it touches a Durable Object, and the app shows its usual offline or Local Mesh state. Its `namespace_id` (`1005`) must be unique on your Cloudflare account, and the number must match `joinLimit` in `worker/rate-limit.ts`. Without the binding (plain `wrangler dev`, tests) an in-memory counter is used.
 
 Deploy it with `npx wrangler deploy -c worker/wrangler.jsonc` and route `signaling.wzee.dev` to it. Without a reachable worker, tabs of the same browser still find each other through a `BroadcastChannel` ("Local Mesh").
 

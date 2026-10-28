@@ -42,7 +42,7 @@ pnpm --filter zeeimage build     # static export into apps/zeeimage/out
 
 The build is a plain static site (`output: "export"`), so it can be hosted anywhere that serves files.
 
-`pnpm --filter zeeimage run deploy` builds it and serves `out` from the `zeeimage` Worker with static assets (`wrangler.jsonc`), then refreshes wzee.dev/tools. The first deploy creates the Worker and, through its `image.wzee.dev` custom domain, the DNS record, so the subdomain never exists without the app behind it. (New Cloudflare Pages projects now become Workers, which is why it doesn't use `wrangler pages deploy` like zeecall.)
+`pnpm --filter zeeimage run deploy` builds it and serves `out` from the `zeeimage` Worker with static assets (`wrangler.jsonc`). The first deploy creates the Worker and, through its `image.wzee.dev` custom domain, the DNS record, so the subdomain never exists without the app behind it. (New Cloudflare Pages projects now become Workers, which is why it doesn't use `wrangler pages deploy` like zeecall.)
 
 ## Where things are
 
