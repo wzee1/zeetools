@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
-    "deploy": "pnpm build && wrangler pages deploy out --project-name zeecall --branch main",
+    "deploy": "pnpm build && wrangler pages deploy out --project-name zeecall --branch main && node ../../scripts/refresh-hub.mjs call",
+    "deploy:signaling": "wrangler deploy -c worker/wrangler.jsonc",
     "start": "next start",
     "lint": "eslint --max-warnings=0",
     "typecheck": "tsc --noEmit",
