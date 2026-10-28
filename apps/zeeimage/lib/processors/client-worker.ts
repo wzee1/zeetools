@@ -4,7 +4,7 @@ import {
   ProcessResult,
 } from './strategy';
 import { computeTargetDimensions } from './dimensions';
-import { FALLBACK_ENCODE, resolveEncodeParams } from './encode';
+import { FALLBACK_ENCODE, needsFallback, resolveEncodeParams } from './encode';
 import { WorkerInputMessage, WorkerOutputMessage } from '../workers/image-resizer.worker';
 import { isSvgFile, svgToPngFile } from '../svg';
 
@@ -162,6 +162,9 @@ async function processInMainThread(file: File, options: ProcessOptions, id: stri
   try {
     processedBlob = await toBlob(type, quality);
   } catch {
+    processedBlob = await toBlob(FALLBACK_ENCODE.type, FALLBACK_ENCODE.quality);
+  }
+  if (needsFallback(processedBlob, type)) {
     processedBlob = await toBlob(FALLBACK_ENCODE.type, FALLBACK_ENCODE.quality);
   }
 

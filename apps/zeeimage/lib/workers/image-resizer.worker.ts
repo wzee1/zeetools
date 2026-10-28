@@ -1,6 +1,6 @@
 import { ProcessOptions } from '../processors/strategy';
 import { computeTargetDimensions } from '../processors/dimensions';
-import { FALLBACK_ENCODE, resolveEncodeParams } from '../processors/encode';
+import { FALLBACK_ENCODE, needsFallback, resolveEncodeParams } from '../processors/encode';
 
 export interface WorkerInputMessage {
   id: string;
@@ -59,6 +59,9 @@ self.onmessage = async (e: MessageEvent<WorkerInputMessage>) => {
     try {
       processedBlob = await canvas.convertToBlob({ type, quality });
     } catch {
+      processedBlob = await canvas.convertToBlob(FALLBACK_ENCODE);
+    }
+    if (needsFallback(processedBlob, type)) {
       processedBlob = await canvas.convertToBlob(FALLBACK_ENCODE);
     }
 

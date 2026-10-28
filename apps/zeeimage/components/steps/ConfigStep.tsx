@@ -1,10 +1,12 @@
 'use client';
 
-import { useId } from 'react';
+import { useEffect, useId, useState } from 'react';
+import { toast } from 'sonner';
 import { ProcessOptions, ScaleMode, ImageFormat } from '@/lib/processors/strategy';
 import { PRESETS, Preset } from '@/lib/presets';
 import { formatOutputFilename, insertNameToken } from '@/lib/processors/client-worker';
 import { computeTargetDimensions } from '@/lib/processors/dimensions';
+import { canEncode } from '@/lib/processors/encode';
 import { IngestedAsset } from '@/hooks/use-image-pipeline';
 import Button from '@zeetools/ui/components/ui/actions/button';
 import Slider from '@zeetools/ui/components/ui/forms/slider';
@@ -58,6 +60,24 @@ export default function ConfigStep({
   isProcessing = false,
 }: ConfigStepProps) {
   const metadataSwitchId = useId();
+  // Most browsers can't encode AVIF from a canvas and would quietly hand back PNGs, so the option is only on
+  // where it really works. A batch already set to AVIF moves to WebP, and says so.
+  const [avifSupported, setAvifSupported] = useState<boolean | null>(null);
+  useEffect(() => {
+    let active = true;
+    canEncode('image/avif').then((supported) => {
+      if (active) setAvifSupported(supported);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (avifSupported === false && options.format === 'image/avif') {
+      onOptionsChange({ format: 'image/webp' });
+      toast.info("This browser can't encode AVIF, so the batch uses WebP instead.");
+    }
+  }, [avifSupported, options.format, onOptionsChange]);
   const losslessSwitchId = useId();
   const widthId = useId();
   const heightId = useId();
@@ -248,15 +268,19 @@ export default function ConfigStep({
                 aria-labelledby={`${patternId}-format`}
                 className="grid grid-cols-[repeat(auto-fit,minmax(6.5rem,1fr))] gap-2"
               >
-                {FORMATS.map((f) => (
-                  <ChoiceButton
-                    key={f.id}
-                    selected={options.format === f.id}
-                    onClick={() => onOptionsChange({ format: f.id })}
-                    title={f.label}
-                    sub={f.badge}
-                  />
-                ))}
+                {FORMATS.map((f) => {
+                  const unavailable = f.id === 'image/avif' && avifSupported === false;
+                  return (
+                    <ChoiceButton
+                      key={f.id}
+                      selected={options.format === f.id}
+                      onClick={() => onOptionsChange({ format: f.id })}
+                      title={f.label}
+                      sub={unavailable ? 'Not in this browser' : f.badge}
+                      disabled={unavailable}
+                    />
+                  );
+                })}
               </div>
             </div>
 
