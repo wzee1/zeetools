@@ -12,6 +12,8 @@
  * API: the runtime holds the sockets and their peer details, and the object writes nothing to storage.
  */
 
+import { withinRateLimit, type RateLimitBinding } from "./rate-limit";
+
 // Ambient declarations for the Cloudflare Worker runtime (kept here so the app's DOM types stay clean)
 interface RoomSocket extends WebSocket {
   serializeAttachment(value: PeerAttachment): void;
@@ -43,6 +45,8 @@ interface DurableObjectNamespace {
 
 interface Env {
   ROOMS: DurableObjectNamespace;
+  /** Per-IP limit on WebSocket upgrades (ratelimits in worker/wrangler.jsonc); absent in tests and plain dev. */
+  JOIN_LIMITER?: RateLimitBinding;
 }
 
 interface PeerAttachment {
@@ -181,6 +185,13 @@ const worker = {
     const peerId = url.searchParams.get("peerId");
     if (!room || !peerId) {
       return new Response("Missing 'room' or 'peerId' parameter", { status: 400 });
+    }
+
+    // Refuse a visitor who joins too often before any Durable Object is woken. Cloudflare sets the
+    // header; local development has none, so there everyone is counted under one shared key.
+    const ip = request.headers.get("cf-connecting-ip") ?? "dev";
+    if (!(await withinRateLimit(env.JOIN_LIMITER, `ip:${ip}`))) {
+      return new Response("Too many requests", { status: 429, headers: { "Retry-After": "60" } });
     }
 
     // Every socket of a room goes to the same Durable Object.
