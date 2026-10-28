@@ -33,7 +33,7 @@ pnpm --filter zeecall build     # static export into apps/zeecall/out
 
 The app is a static export (`output: "export"`); the signaling worker is deployed separately.
 
-`pnpm --filter zeecall run deploy` builds the app, uploads `out` to the `zeecall` Cloudflare Pages project (production, served at call.wzee.dev) and refreshes wzee.dev/tools.
+`pnpm --filter zeecall run deploy` builds the app, uploads `out` to the `zeecall` Cloudflare Pages project (production, served at call.wzee.dev).
 
 The signaling worker keeps each room in a Durable Object (a plain Worker cannot pass messages between two requests' sockets). To run it next to the dev server, from `apps/zeecall`:
 

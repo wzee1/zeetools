@@ -14,7 +14,6 @@
     "test": "pnpm -r --if-present run test",
     "test:ct": "pnpm -r --if-present run test:ct",
     "build": "pnpm -r --if-present run build",
-    "tools:refresh": "node --env-file-if-exists=.env.local scripts/refresh-tools.mjs",
     "prepare": "husky"
   },
   "devDependencies": {

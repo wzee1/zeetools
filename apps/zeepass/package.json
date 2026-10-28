@@ -12,7 +12,7 @@
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "deploy": "pnpm cf:deploy && pnpm -w tools:refresh",
+    "deploy": "pnpm cf:deploy",
     "test:watch": "vitest"
   },
   "dependencies": {

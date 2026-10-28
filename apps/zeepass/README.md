@@ -42,7 +42,7 @@ zeepass is built for Cloudflare with [OpenNext](https://opennext.js.org/cloudfla
 pnpm --filter zeepass cf:build     # builds into apps/zeepass/.open-next
 pnpm --filter zeepass cf:preview   # runs it locally
 pnpm --filter zeepass cf:deploy
-pnpm --filter zeepass run deploy      # cf:deploy, then refreshes wzee.dev/tools
+pnpm --filter zeepass run deploy      # cf:deploy
 ```
 
 `wrangler.jsonc` binds the `SecretVault` Durable Object class as `SECRETS` (one object per secret, EU jurisdiction) and points `main` at `worker.ts`, which re-exports the OpenNext worker and the class. There is nothing to create before deploying: the `v1` migration creates the class. It also declares two `ratelimits` bindings, `CREATE_LIMITER` (10 a minute per IP) and `REVEAL_LIMITER` (30 a minute per IP), which the server actions check before they call the Durable Object; over the limit the action answers with its ordinary server-error result. The `namespace_id`s (`1003`, `1004`) must be unique on your Cloudflare account, and the numbers must match `LIMITS` in `lib/secret/rate-limit.ts`. Without the bindings (`next dev`, tests) an in-memory counter is used, and a request without a `cf-connecting-ip` header is not limited. The route and name in the file are the wzee.dev deployment; change them for your own.
