@@ -96,7 +96,11 @@ export default function SidebarContent({ nav, group, onNavigate }: SidebarConten
           <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3 pl-2.5">
             <p className="min-w-0 text-xs leading-relaxed text-muted">
               Part of the{" "}
-              <a href={zee.hub} className="text-foreground transition-colors duration-200 ease-out hover:text-primary-text">
+              {/* Underlined, not just a different colour: a link inside a sentence must not rely on colour alone. */}
+              <a
+                href={zee.hub}
+                className="text-foreground underline decoration-border-strong underline-offset-2 transition-colors duration-200 ease-out hover:text-primary-text hover:decoration-primary-text"
+              >
                 {new URL(zee.hub).host}
               </a>{" "}
               suite

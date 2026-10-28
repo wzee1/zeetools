@@ -69,7 +69,7 @@ export default function CreateRoomView({ slug, onChangeSlug, onCreate }: CreateR
                     <span className="size-4 shrink-0 text-muted [&>svg]:size-4">
                       <Icon />
                     </span>
-                    <h3 className="text-base font-normal text-foreground">{title}</h3>
+                    <h2 className="text-base font-normal text-foreground">{title}</h2>
                   </div>
                   <p className="text-sm leading-relaxed text-muted">{body}</p>
                 </li>

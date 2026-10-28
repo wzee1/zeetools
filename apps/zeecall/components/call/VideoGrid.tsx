@@ -152,7 +152,7 @@ export default function VideoGrid({
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Users className="size-4 shrink-0 text-muted" />
-              <h3 className="text-base font-normal text-foreground">Waiting for guest to join</h3>
+              <h2 className="text-base font-normal text-foreground">Waiting for guest to join</h2>
             </div>
             <p className="text-sm leading-relaxed text-muted">
               Share this private room URL with your peer. WebRTC packets will flow directly between your browsers.

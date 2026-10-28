@@ -6,7 +6,7 @@ export default function ZeeFooter() {
           Part of the{" "}
           <a
             href="https://wzee.dev"
-            className="font-medium text-foreground hover:underline transition-colors"
+            className="font-medium text-foreground underline decoration-border-strong underline-offset-2 transition-colors hover:decoration-foreground"
           >
             wzee.dev
           </a>{" "}

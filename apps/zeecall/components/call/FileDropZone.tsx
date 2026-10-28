@@ -113,9 +113,9 @@ export default function FileDropZone({
           {/* Active & Completed Transfers */}
           {transfers.length > 0 && (
             <div className="border-t border-border">
-              <h4 className="px-5 pt-5 text-xs text-muted sm:px-8">
+              <h2 className="px-5 pt-5 text-xs text-muted sm:px-8">
                 Transfers ({transfers.length})
-              </h4>
+              </h2>
 
               <ul className="divide-y divide-border">
                 {transfers.map((t) => (
