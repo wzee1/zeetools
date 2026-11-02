@@ -15,6 +15,8 @@ import { formatBytes } from '@/lib/format';
 interface IngestStepProps {
   assets: IngestedAsset[];
   onAddFiles: (files: File[]) => void;
+  /** Files read so far out of those dropped; `total` is 0 when nothing is being read. */
+  ingestProgress?: { completed: number; total: number };
   onRemoveAsset: (id: string) => void;
   onClearAssets: () => void;
   onProceedToConfig: () => void;
@@ -25,6 +27,7 @@ interface IngestStepProps {
 export default function IngestStep({
   assets,
   onAddFiles,
+  ingestProgress = { completed: 0, total: 0 },
   onRemoveAsset,
   onClearAssets,
   onProceedToConfig,
@@ -33,10 +36,32 @@ export default function IngestStep({
   const localRef = useRef<DropzoneHandle>(null);
   const activeRef = dropzoneRef || localRef;
   const hasAssets = assets.length > 0;
+  const isIngesting = ingestProgress.total > 0;
+  const percentage = isIngesting ? Math.round((ingestProgress.completed / ingestProgress.total) * 100) : 0;
 
   return (
     <>
-      <Dropzone ref={activeRef} onFiles={onAddFiles} variant={hasAssets ? 'strip' : 'surface'} />
+      <Dropzone ref={activeRef} onFiles={onAddFiles} variant={hasAssets || isIngesting ? 'strip' : 'surface'} />
+
+      {/* Reading a large drop takes a while: the bar fills as each thumbnail lands in the queue below. */}
+      {isIngesting && (
+        <div role="status" aria-live="polite" className="space-y-3 px-5 pt-6 sm:px-8">
+          <div className="flex items-baseline justify-between gap-4">
+            <p className="text-sm text-foreground">
+              Reading {ingestProgress.completed} of {ingestProgress.total} images...
+            </p>
+            <span className="font-mono text-sm tabular-nums text-foreground">
+              <Tick value={`${percentage}%`} />
+            </span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden bg-border">
+            <div
+              className="h-full origin-left bg-primary transition-transform duration-300 ease-out"
+              style={{ transform: `scaleX(${percentage / 100})` }}
+            />
+          </div>
+        </div>
+      )}
 
       {hasAssets && (
         <>
@@ -74,7 +99,12 @@ export default function IngestStep({
                 <span>to proceed</span>
               </div>
 
-              <Button variant="primary" className="h-10 px-4 @max-[34rem]:flex-1" onClick={onProceedToConfig}>
+              <Button
+                variant="primary"
+                className="h-10 px-4 @max-[34rem]:flex-1"
+                onClick={onProceedToConfig}
+                disabled={isIngesting}
+              >
                 <span>Configure Batch</span>
                 <ChevronRightIcon />
               </Button>

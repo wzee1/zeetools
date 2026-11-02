@@ -47,3 +47,38 @@ describe('useImagePipeline thumbnails', () => {
     expect(hook.result.current.assets).toHaveLength(0);
   });
 });
+
+describe('useImagePipeline ingest progress', () => {
+  it('reports progress while reading and resets when done, keeping drop order', async () => {
+    vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:x'), revokeObjectURL: vi.fn() }));
+    const hook = renderHook(() => useImagePipeline());
+    const names = Array.from({ length: 9 }, (_, i) => `img-${i}.svg`);
+
+    let pending!: Promise<void>;
+    act(() => {
+      pending = hook.result.current.addFiles(names.map((n) => new File(['<svg/>'], n, { type: 'image/svg+xml' })));
+    });
+    expect(hook.result.current.ingestProgress.total).toBe(9);
+
+    await act(async () => {
+      await pending;
+    });
+    expect(hook.result.current.ingestProgress).toEqual({ completed: 0, total: 0 });
+    expect(hook.result.current.assets.map((a) => a.file.name)).toEqual(names);
+  });
+
+  it('drops files still being read when the queue is cleared', async () => {
+    vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:x'), revokeObjectURL: vi.fn() }));
+    const hook = renderHook(() => useImagePipeline());
+
+    let pending!: Promise<void>;
+    act(() => {
+      pending = hook.result.current.addFiles([new File(['<svg/>'], 'a.svg', { type: 'image/svg+xml' })]);
+    });
+    act(() => hook.result.current.clearAssets());
+    await act(async () => {
+      await pending;
+    });
+    expect(hook.result.current.assets).toHaveLength(0);
+  });
+});

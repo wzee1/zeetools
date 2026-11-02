@@ -21,7 +21,8 @@ function HomeContent({ currentMode }: { currentMode: AppMode }) {
   const dropzoneRef = useRef<DropzoneHandle>(null);
 
   const pipeline = useImagePipeline();
-  const { activeStep, setActiveStep, assets, options, isProcessing, results, startBatchProcessing } = pipeline;
+  const { activeStep, setActiveStep, assets, ingestProgress, options, isProcessing, results, startBatchProcessing } = pipeline;
+  const isIngesting = ingestProgress.total > 0;
 
   const { exportZip } = useZipExporter();
   // The sidebar shows how many images are queued (a number only; nothing is stored).
@@ -36,7 +37,7 @@ function HomeContent({ currentMode }: { currentMode: AppMode }) {
     },
     onConfirmAndProcess: () => {
       if (currentMode === 'batch') {
-        if (activeStep === 1 && assets.length > 0) {
+        if (activeStep === 1 && assets.length > 0 && !isIngesting) {
           setActiveStep(2);
         } else if (activeStep === 2 && assets.length > 0 && !isProcessing) {
           startBatchProcessing();
