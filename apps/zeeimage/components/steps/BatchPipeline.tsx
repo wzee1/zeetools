@@ -38,6 +38,7 @@ export default function BatchPipeline({ pipeline, dropzoneRef }: BatchPipelinePr
     setActiveStep,
     assets,
     addFiles,
+    ingestProgress,
     removeAsset,
     clearAssets,
     options,
@@ -78,6 +79,7 @@ export default function BatchPipeline({ pipeline, dropzoneRef }: BatchPipelinePr
                 <IngestStep
                   assets={assets}
                   onAddFiles={addFiles}
+                  ingestProgress={ingestProgress}
                   onRemoveAsset={removeAsset}
                   onClearAssets={clearAssets}
                   onProceedToConfig={() => setActiveStep(2)}
