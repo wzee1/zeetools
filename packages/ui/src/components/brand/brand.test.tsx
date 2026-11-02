@@ -2,8 +2,10 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { SidebarContext } from "../../hooks/use-sidebar";
 import Stagger from "../motion/stagger";
+import JsonLd from "./json-ld";
 import PageHeader from "./page-header";
 import SidebarItem from "./sidebar-item";
+import ToolAbout from "./tool-about";
 
 describe("PageHeader", () => {
   it("renders a regular-weight title, the description, and the leading and aside slots", () => {
@@ -76,5 +78,42 @@ describe("SidebarItem", () => {
     // Not prevented, so the browser itself changes the hash and fires hashchange.
     expect(fireEvent.click(row)).toBe(true);
     expect(onNavigate).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("ToolAbout", () => {
+  const content = {
+    heading: "About demo",
+    intro: "A demo tool.",
+    points: [{ title: "Point one", body: "Body one." }],
+    faq: [
+      { q: "Is it free?", a: "Yes, free." },
+      { q: "Is it open source?", a: "Yes." },
+    ],
+  };
+
+  it("renders the heading, intro, points and every FAQ answer as native details", () => {
+    const { container } = render(<ToolAbout {...content} source="https://github.com/wzee1/zeetools" />);
+    expect(screen.getByRole("heading", { level: 1, name: "About demo" })).toBeInTheDocument();
+    expect(screen.getByText("A demo tool.")).toBeInTheDocument();
+    expect(screen.getByText("Body one.")).toBeInTheDocument();
+    expect(container.querySelectorAll("details > summary")).toHaveLength(2);
+    // Closed answers stay in the markup, so crawlers read them.
+    expect(screen.getByText("Yes, free.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Source on GitHub" })).toHaveAttribute("href", "https://github.com/wzee1/zeetools");
+  });
+
+  it("leaves the source link out when there is none", () => {
+    render(<ToolAbout {...content} />);
+    expect(screen.queryByRole("link", { name: "Source on GitHub" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Privacy notice" })).toHaveAttribute("href", "https://wzee.dev/privacy");
+  });
+});
+
+describe("JsonLd", () => {
+  it("emits a data script with < escaped", () => {
+    const { container } = render(<JsonLd data={{ a: "</script>" }} />);
+    const script = container.querySelector('script[type="application/ld+json"]');
+    expect(script?.textContent).toBe('{"a":"\\u003c/script>"}');
   });
 });

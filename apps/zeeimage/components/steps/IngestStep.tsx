@@ -50,6 +50,37 @@ export default function IngestStep({
             </span>
           </div>
 
+          {/* The actions sit above the list, so a long queue never pushes them out of reach. */}
+          <div className={FOOTER}>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" className="h-10 px-4" onClick={() => activeRef.current?.openPicker()}>
+                <PlusIcon />
+                Add More
+              </Button>
+              <Button
+                variant="ghost"
+                className="h-10 px-4 text-danger enabled:hover:text-danger"
+                onClick={onClearAssets}
+              >
+                <TrashIcon />
+                Clear All
+              </Button>
+            </div>
+
+            <div className="flex items-center justify-between gap-4 @min-[34rem]:justify-end">
+              <div className="flex items-center gap-1.5 text-xs text-muted @max-[40rem]:hidden">
+                <span>Press</span>
+                <Kbd hotkey="mod+enter" />
+                <span>to proceed</span>
+              </div>
+
+              <Button variant="primary" className="h-10 px-4 @max-[34rem]:flex-1" onClick={onProceedToConfig}>
+                <span>Configure Batch</span>
+                <ChevronRightIcon />
+              </Button>
+            </div>
+          </div>
+
           <div className={SCROLLER}>
             <div className="grid grid-cols-2 gap-x-4 gap-y-5 border-t border-border px-5 py-5 sm:grid-cols-3 sm:px-8 md:grid-cols-4 @min-[52rem]:grid-cols-5">
               {assets.map((asset) => (
@@ -90,36 +121,6 @@ export default function IngestStep({
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
-
-          <div className={FOOTER}>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" className="h-10 px-4" onClick={() => activeRef.current?.openPicker()}>
-                <PlusIcon />
-                Add More
-              </Button>
-              <Button
-                variant="ghost"
-                className="h-10 px-4 text-danger enabled:hover:text-danger"
-                onClick={onClearAssets}
-              >
-                <TrashIcon />
-                Clear All
-              </Button>
-            </div>
-
-            <div className="flex items-center justify-between gap-4 @min-[34rem]:justify-end">
-              <div className="flex items-center gap-1.5 text-xs text-muted @max-[40rem]:hidden">
-                <span>Press</span>
-                <Kbd hotkey="mod+enter" />
-                <span>to proceed</span>
-              </div>
-
-              <Button variant="primary" className="h-10 px-4 @max-[34rem]:flex-1" onClick={onProceedToConfig}>
-                <span>Configure Batch</span>
-                <ChevronRightIcon />
-              </Button>
             </div>
           </div>
         </>

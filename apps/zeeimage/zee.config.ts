@@ -17,6 +17,7 @@ export const zee = {
     title: "zeeimage: batch image converter in your browser",
     description: "Resize, convert and compress images in bulk to WebP, PNG or JPEG, right in your browser. Your images are never uploaded. Free, no sign-up.",
   },
+  faq: "/faq", // the About and FAQ page, listed in the sidebar above the privacy notice
   hub: "https://wzee.dev",
   localOnly: true, // shows the privacy badge in the header
 } as const;

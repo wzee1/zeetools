@@ -520,3 +520,21 @@ html[data-ready] .preloader {
     transform: translateY(105%);
   }
 }
+
+/*
+ * The FAQ's chevron (FaqItem): it turns as a question opens and turns back as soon as one starts closing (the
+ * element keeps its open attribute until the closing animation ends, so data-state marks that moment).
+ */
+[data-faq-chevron] {
+  transition: rotate 420ms var(--ease-out);
+}
+
+[data-faq][open]:not([data-state="closing"]) [data-faq-chevron] {
+  rotate: 180deg;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-faq-chevron] {
+    transition: none;
+  }
+}

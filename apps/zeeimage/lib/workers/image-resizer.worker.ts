@@ -1,6 +1,7 @@
 import { ProcessOptions } from '../processors/strategy';
 import { computeTargetDimensions } from '../processors/dimensions';
 import { FALLBACK_ENCODE, needsFallback, resolveEncodeParams } from '../processors/encode';
+import { keepExif } from '../metadata';
 
 export interface WorkerInputMessage {
   id: string;
@@ -63,6 +64,10 @@ self.onmessage = async (e: MessageEvent<WorkerInputMessage>) => {
     }
     if (needsFallback(processedBlob, type)) {
       processedBlob = await canvas.convertToBlob(FALLBACK_ENCODE);
+    }
+    // A canvas writes no metadata, so stripping is the default; keeping copies the original's EXIF back in.
+    if (!options.stripMetadata) {
+      processedBlob = await keepExif(file, processedBlob, { width: targetWidth, height: targetHeight });
     }
 
     const durationMs = Math.round(performance.now() - startTime);

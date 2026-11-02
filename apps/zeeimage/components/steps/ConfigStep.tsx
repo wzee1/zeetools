@@ -328,7 +328,11 @@ export default function ConfigStep({
                     <ShieldCheckIcon className="size-3.5 text-primary-text" />
                     <span>Strip EXIF & Metadata</span>
                   </Label>
-                  <p className="text-sm leading-relaxed text-muted">Removes GPS coordinates, camera model, and timestamps.</p>
+                  <p className="text-sm leading-relaxed text-muted">
+                    {options.stripMetadata
+                      ? 'Removes GPS coordinates, camera model, and timestamps.'
+                      : 'Keeps the original EXIF data in JPEG, PNG and WebP files. AVIF files are saved without it.'}
+                  </p>
                 </div>
                 <Switch
                   id={metadataSwitchId}

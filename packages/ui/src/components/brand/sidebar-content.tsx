@@ -2,9 +2,11 @@
 
 import { motion } from "motion/react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useCommandMenu } from "../commands/commands";
 import SidebarIcon from "../icons/navigation/sidebar-icon";
 import SearchIcon from "../icons/navigation/search-icon";
+import InfoIcon from "../icons/status/info-icon";
 import ShieldCheckIcon from "../icons/status/shield-check-icon";
 import KeyboardIcon from "../icons/system/keyboard-icon";
 import ThemeIcon from "../icons/system/theme-icon";
@@ -16,6 +18,7 @@ import { useThemeSwitch } from "../../hooks/use-theme-switch";
 import { useZee } from "../../hooks/use-zee";
 import { interactive, springSnappy } from "../../lib/motion";
 import { sidebarItemClass } from "../../lib/sidebar";
+import SidebarItem from "./sidebar-item";
 import ZeeMark from "./zee-mark";
 
 // The mark animates from its parent's hover state (as in the header), so the brand link is a Motion element.
@@ -32,13 +35,14 @@ interface SidebarContentProps {
 
 /**
  * Everything the sidebar holds, for the desktop aside and the phone drawer alike: the product and the
- * view controls, then the app's own `nav` rows and `group`, then the privacy and suite links.
+ * view controls, then the app's own `nav` rows and `group`, then the FAQ (when the app has one), the privacy and suite links.
  */
 export default function SidebarContent({ nav, group, onNavigate }: SidebarContentProps) {
   const zee = useZee();
   const { openMenu, openShortcuts } = useCommandMenu();
   const { theme, toggle } = useThemeSwitch();
   const { setCollapsed } = useShell();
+  const pathname = usePathname();
 
   return (
     <SidebarContext.Provider value={{ onNavigate }}>
@@ -89,6 +93,11 @@ export default function SidebarContent({ nav, group, onNavigate }: SidebarConten
         <div className="mt-8 flex min-h-0 flex-1 flex-col">{group}</div>
 
         <div className="mt-4">
+          {zee.faq && (
+            <SidebarItem href={zee.faq} icon={<InfoIcon />} active={pathname === zee.faq}>
+              FAQ
+            </SidebarItem>
+          )}
           <a href={`${zee.hub}/privacy`} target="_blank" rel="noopener noreferrer" className={sidebarItemClass()}>
             <ShieldCheckIcon className="text-primary-text" />
             <span className="truncate">Privacy & GDPR Notice</span>

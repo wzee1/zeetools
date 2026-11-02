@@ -29,7 +29,13 @@ export const metadata: Metadata = {
   description: zee.seo.description,
   applicationName: zee.name,
   authors: [{ name: "Zoltán Farkas", url: zee.hub }],
-  alternates: { canonical: "/" },
+  creator: "Zoltán Farkas",
+  publisher: "Zoltán Farkas",
+  keywords: ["secure password sharing", "one-time secret link", "self-destructing message", "share API key securely", "share .env file", "burn after reading", "client-side encryption", "AES-GCM-256"],
+  category: "security",
+  formatDetection: { telephone: false },
+  // The text version of this page for AI assistants, generated from the same copy as the About section.
+  alternates: { canonical: "/", types: { "text/plain": "/llms.txt" } },
   openGraph: {
     type: "website",
     title: zee.seo.title,

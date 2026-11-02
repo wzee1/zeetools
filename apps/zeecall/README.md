@@ -48,7 +48,8 @@ Deploy it with `npx wrangler deploy -c worker/wrangler.jsonc` and route `signali
 
 ## Where things are
 
-- `app/page.tsx`: the home, lobby and in-call states.
+- `content/about.ts`: the About and FAQ copy, which also feeds the FAQ structured data and `/llms.txt` (`app/llms.txt/route.ts`).
+- `app/page.tsx`, `components/views/ZeeCallApp.tsx`: the page (a server component with the About section and structured data) and the client app that holds the home, lobby and in-call states.
 - `components/call`: the video grid, tiles, screen share view, controls dock, file drop and notes.
 - `components/lobby`: device selection and the pre-call preview.
 - `hooks/use-webrtc.ts`, `use-media-stream.ts`, `use-data-channel.ts`, `use-keyboard-controls.ts`: the peer connections, media, data channel and hotkeys.

@@ -29,7 +29,13 @@ export const metadata: Metadata = {
   description: zee.seo.description,
   applicationName: zee.name,
   authors: [{ name: "Zoltán Farkas", url: zee.hub }],
-  alternates: { canonical: "/" },
+  creator: "Zoltán Farkas",
+  publisher: "Zoltán Farkas",
+  keywords: ["batch image converter", "image resizer", "compress images online", "convert images to WebP", "PNG to JPEG converter", "favicon generator", "private image converter", "browser image processing"],
+  category: "multimedia",
+  formatDetection: { telephone: false },
+  // The text version of this page for AI assistants, generated from the same copy as the About section.
+  alternates: { canonical: "/", types: { "text/plain": "/llms.txt" } },
   openGraph: {
     type: "website",
     title: zee.seo.title,

@@ -49,7 +49,8 @@ pnpm --filter zeepass run deploy      # cf:deploy
 
 ## Where things are
 
-- `app/`: the create page, the reveal page (`/s/[id]`) and the server actions.
+- `app/`: the create page (with the About section and structured data), the reveal page (`/s/[id]`), the server actions, `manifest.ts`, `robots.ts`, `sitemap.ts` and `llms.txt/route.ts`.
+- `content/about.ts`: the About and FAQ copy, which also feeds the FAQ structured data and `/llms.txt`.
 - `lib/crypto`: AES-GCM encryption and key encoding.
 - `lib/secret`: storage (the `SecretVault` Durable Object), validation, and the on-device history.
 - `lib/scramble.ts`: the text scramble used while a secret decrypts.
