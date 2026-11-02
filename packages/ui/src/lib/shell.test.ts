@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { SIDEBAR, clampSidebarWidth, shellBootScript, shellKey } from "./shell";
 
 const SHELL_KEY = shellKey("zeepass");
@@ -6,6 +6,8 @@ const SHELL_KEY = shellKey("zeepass");
 afterEach(() => {
   localStorage.clear();
   delete document.documentElement.dataset.sidebar;
+  delete document.documentElement.dataset.instant;
+  vi.restoreAllMocks();
   document.documentElement.style.removeProperty("--sidebar-w");
 });
 
@@ -42,5 +44,29 @@ describe("shellBootScript", () => {
     expect(document.documentElement.dataset.sidebar).toBeUndefined();
     localStorage.setItem(SHELL_KEY, "{oops");
     expect(run).not.toThrow();
+  });
+
+  const navigate = (type: string, referrer = "") => {
+    vi.spyOn(performance, "getEntriesByType").mockReturnValue([{ type } as PerformanceNavigationTiming]);
+    vi.spyOn(document, "referrer", "get").mockReturnValue(referrer);
+  };
+
+  it("skips the preloader when coming back to the app", () => {
+    for (const [type, referrer] of [["reload", ""], ["back_forward", ""], ["navigate", `${location.origin}/s/abc`]]) {
+      navigate(type, referrer);
+      run();
+      expect(document.documentElement.dataset.instant).toBe("");
+      delete document.documentElement.dataset.instant;
+      vi.restoreAllMocks();
+    }
+  });
+
+  it("keeps the preloader on a first visit or from another site", () => {
+    navigate("navigate");
+    run();
+    expect(document.documentElement.dataset.instant).toBeUndefined();
+    navigate("navigate", "https://wzee.dev/tools");
+    run();
+    expect(document.documentElement.dataset.instant).toBeUndefined();
   });
 });

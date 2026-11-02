@@ -6,6 +6,9 @@
     { "pattern": "pass.wzee.dev", "custom_domain": true }
   ],
   "compatibility_date": "2026-10-01",
+  // esbuild's name keeping wraps functions in __name(), which also rewrites next-themes' inline theme script; that
+  // helper does not exist in the page, so the script threw and the theme was not applied before first paint.
+  "keep_names": false,
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
   "durable_objects": {

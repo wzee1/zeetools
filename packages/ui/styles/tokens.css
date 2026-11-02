@@ -293,6 +293,12 @@ html[data-ready] .preloader {
   visibility: hidden;
 }
 
+/* Coming back to the app (reload, back/forward, same-origin link: lib/shell): the browser still shows
+   the previous frame until this page paints, so a preloader would flash between two copies of the app. */
+html[data-instant] .preloader {
+  display: none;
+}
+
 @keyframes preloader-failsafe {
   to {
     opacity: 0;
@@ -300,13 +306,14 @@ html[data-ready] .preloader {
   }
 }
 
-/* Entrance once the preloader lifts: the sidebar slides in, the panel rises in just after it. */
+/* Entrance once the preloader lifts: the sidebar slides in, the panel rises in just after it.
+   Not when coming back (data-instant): the app is already on screen. */
 @media (prefers-reduced-motion: no-preference) {
-  html[data-ready] [data-enter="sidebar"] {
+  html[data-ready]:not([data-instant]) [data-enter="sidebar"] {
     animation: shell-sidebar-in 520ms var(--ease-out) both;
   }
 
-  html[data-ready] [data-enter="panel"] {
+  html[data-ready]:not([data-instant]) [data-enter="panel"] {
     animation: shell-panel-in 620ms var(--ease-out) 60ms both;
   }
 }
