@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { zee } from "@/zee.config";
 
-// Written once at build time (zeeimage and zeecall are static exports).
+// Prerendered at build time, so the Worker serves it as a static file.
 export const dynamic = "force-static";
 
 export default function manifest(): MetadataRoute.Manifest {

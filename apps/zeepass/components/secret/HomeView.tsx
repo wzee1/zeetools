@@ -11,7 +11,7 @@ import { useSecretHistory } from "@/hooks/use-secret-history";
 const exit = { opacity: 0, y: -6, transition: { duration: 0.2, ease: [0.32, 0.72, 0, 1] as const } };
 
 /** `?secret=<id>` opens a link this browser created (from the sidebar, or right after creating it). */
-function HomeView({ selectedId }: { selectedId: string | null }) {
+function HomeContent({ selectedId }: { selectedId: string | null }) {
   const router = useRouter();
   const { secrets } = useSecretHistory();
   const selected = secrets.find((s) => s.id === selectedId);
@@ -38,14 +38,14 @@ function HomeView({ selectedId }: { selectedId: string | null }) {
 
 /** The only reader of the query string, so only this part waits for the browser. */
 function HomeFromUrl() {
-  return <HomeView selectedId={useSearchParams().get("secret")} />;
+  return <HomeContent selectedId={useSearchParams().get("secret")} />;
 }
 
-export default function Home() {
+export default function HomeView() {
   // useSearchParams needs a boundary for the static render. Its fallback is the default view (the create form),
   // so the prerendered HTML carries the page's heading and text instead of an empty shell.
   return (
-    <Suspense fallback={<HomeView selectedId={null} />}>
+    <Suspense fallback={<HomeContent selectedId={null} />}>
       <HomeFromUrl />
     </Suspense>
   );

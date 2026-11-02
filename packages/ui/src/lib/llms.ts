@@ -25,6 +25,7 @@ export function buildLlmsTxt(input: LlmsInput): string {
   const { name, url, description, about, privacy, limits, source } = input;
   const links = [
     `- [${name}](${url}): the tool`,
+    `- [FAQ](${url}/faq): about ${name} and the questions people ask`,
     ...(source ? [`- [Source code](${source}): open source on GitHub`] : []),
     "- [Privacy notice](https://wzee.dev/privacy): the privacy policy for all wzee.dev tools",
     "- [Zoltán Farkas, wzee.dev](https://wzee.dev): the author",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { about, llmsTxt, toolJsonLd } from "@/content/about";
+import { about, faqJsonLd, llmsTxt, toolJsonLd } from "@/content/about";
 import { appUrl, zee } from "@/zee.config";
 
 describe("zeepass About content", () => {
@@ -17,8 +17,7 @@ describe("zeepass About content", () => {
   });
 
   it("emits FAQ structured data that is exactly the visible FAQ", () => {
-    const faq = toolJsonLd["@graph"][1] as { mainEntity: { name: string; acceptedAnswer: { text: string } }[] };
-    expect(faq.mainEntity.map((item) => ({ q: item.name, a: item.acceptedAnswer.text }))).toEqual(about.faq);
+    expect(faqJsonLd.mainEntity.map((item) => ({ q: item.name, a: item.acceptedAnswer.text }))).toEqual(about.faq);
   });
 
   it("describes the app with the site's own description and URL", () => {

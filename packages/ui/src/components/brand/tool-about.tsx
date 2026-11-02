@@ -1,5 +1,5 @@
-import { ChevronDown } from "lucide-react";
 import type { ToolAboutContent } from "../../lib/about";
+import FaqItem from "./faq-item";
 
 interface ToolAboutProps extends ToolAboutContent {
   /** The tool's code on GitHub; the link is left out when empty. */
@@ -9,44 +9,36 @@ interface ToolAboutProps extends ToolAboutContent {
 const LINK = "text-foreground underline decoration-border-strong underline-offset-2 transition-colors hover:decoration-foreground";
 
 /**
- * The tool's plain-language explanation under the tool: what it is, how it works, and the questions people ask.
+ * The tool's FAQ page (linked from the sidebar): what it is, how it works, and the questions people ask.
  * It is server-rendered text, and the FAQ is native <details>, so readers, search engines and AI crawlers get
- * every answer without JavaScript. Quiet on purpose: it sits under the tool and never competes with it.
+ * every answer without JavaScript. It has a page of its own so the tool's view stays the tool.
  */
 export default function ToolAbout({ heading, intro, points, faq, source }: ToolAboutProps) {
   return (
-    <section
-      aria-labelledby="about-heading"
-      className="mx-auto mt-4 w-full max-w-4xl shrink-0 px-5 pb-12 sm:px-10"
-    >
-      <div className="space-y-10 border-t border-border pt-10">
+    <main className="mx-auto w-full max-w-4xl px-5 py-10 sm:px-10 sm:py-12">
+      <div className="space-y-10">
         <div className="space-y-3">
-          <h2 id="about-heading" className="text-xl font-normal tracking-[-0.01em] text-foreground">
+          {/* Sized like PageHeader's title, so the page reads as one of the app's own. */}
+          <h1 className="text-[1.75rem] leading-tight font-normal tracking-[-0.02em] text-balance text-foreground sm:text-[2rem]">
             {heading}
-          </h2>
+          </h1>
           <p className="max-w-xl text-[0.9375rem] leading-relaxed text-pretty text-muted">{intro}</p>
         </div>
 
         <ul className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
           {points.map(({ title, body }) => (
             <li key={title} className="min-w-0 space-y-1.5">
-              <h3 className="text-sm font-medium text-foreground">{title}</h3>
+              <h2 className="text-sm font-medium text-foreground">{title}</h2>
               <p className="text-sm leading-relaxed text-pretty text-muted">{body}</p>
             </li>
           ))}
         </ul>
 
         <div className="space-y-2">
-          <h3 className="text-sm font-medium text-foreground">Frequently asked questions</h3>
+          <h2 className="text-sm font-medium text-foreground">Frequently asked questions</h2>
           <div className="divide-y divide-border border-y border-border">
             {faq.map(({ q, a }) => (
-              <details key={q} className="group">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-sm py-3.5 text-sm text-foreground outline-none marker:hidden focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
-                  <span className="min-w-0 text-pretty">{q}</span>
-                  <ChevronDown aria-hidden className="size-4 shrink-0 text-muted transition-transform duration-200 group-open:rotate-180" />
-                </summary>
-                <p className="max-w-xl pb-4 text-sm leading-relaxed text-pretty text-muted">{a}</p>
-              </details>
+              <FaqItem key={q} q={q} a={a} />
             ))}
           </div>
         </div>
@@ -65,6 +57,6 @@ export default function ToolAbout({ heading, intro, points, faq, source }: ToolA
           </a>
         </p>
       </div>
-    </section>
+    </main>
   );
 }

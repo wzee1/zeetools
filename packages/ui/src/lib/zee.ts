@@ -15,6 +15,8 @@ export interface ZeeInfo {
   localOnly?: boolean;
   /** Overrides the privacy badge copy. */
   privacy?: ZeePrivacy;
+  /** The app's own FAQ page, such as "/faq": the sidebar lists it above the privacy notice. Left out, the row is not shown. */
+  faq?: string;
 }
 
 export const DEFAULT_ZEE: ZeeInfo = { name: "zee", hub: "https://wzee.dev" };

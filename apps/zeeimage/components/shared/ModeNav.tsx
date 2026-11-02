@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import SidebarItem from "@zeetools/ui/components/brand/sidebar-item";
 import CropIcon from "@zeetools/ui/components/icons/actions/crop-icon";
 import ImageIcon from "@zeetools/ui/components/icons/media/image-icon";
@@ -16,6 +16,8 @@ const ICONS: Record<AppMode, React.ComponentType> = {
 
 /** The sidebar's nav slot: one row per mode. The current mode is the active row; Batch carries the queue length. */
 export default function ModeNav() {
+  // Modes live on the tool's page; on any other page (the FAQ) no row is current.
+  const onTool = usePathname() === "/";
   const current = parseMode(useSearchParams().get("mode"));
   const count = useBatchCount();
 
@@ -28,7 +30,7 @@ export default function ModeNav() {
             key={mode.id}
             href={mode.href}
             icon={<Icon />}
-            active={current === mode.id}
+            active={onTool && current === mode.id}
             meta={mode.id === "batch" && count > 0 ? count : undefined}
           >
             {mode.label}

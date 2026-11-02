@@ -1,5 +1,5 @@
 import type { ToolAboutContent } from "@zeetools/ui/lib/about";
-import { buildToolJsonLd } from "@zeetools/ui/lib/structured-data";
+import { buildFaqJsonLd, buildToolJsonLd } from "@zeetools/ui/lib/structured-data";
 import { buildLlmsTxt } from "@zeetools/ui/lib/llms";
 import { appUrl, zee } from "@/zee.config";
 
@@ -19,7 +19,7 @@ export const about: ToolAboutContent = {
     },
     {
       title: "Gone after one read",
-      body: "With burn after first read on (the default), the stored copy is deleted the moment the link is opened. Otherwise it is deleted when it expires: after 1 hour, 24 hours or 7 days.",
+      body: "With burn after first read on (the default), the stored copy is deleted the moment the recipient reveals it. Opening the link alone, or a chat app’s link preview, does not reveal it. Otherwise it is deleted when it expires: after 1 hour, 24 hours or 7 days.",
     },
     {
       title: "No account needed",
@@ -92,3 +92,6 @@ export const llmsTxt = buildLlmsTxt({
     "Needs a modern browser with the Web Crypto API.",
   ],
 });
+
+/** The FAQ page's structured data, from the same questions it shows. */
+export const faqJsonLd = buildFaqJsonLd({ name: zee.name, url: appUrl, about });

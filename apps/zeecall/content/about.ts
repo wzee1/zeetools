@@ -1,5 +1,5 @@
 import type { ToolAboutContent } from "@zeetools/ui/lib/about";
-import { buildToolJsonLd } from "@zeetools/ui/lib/structured-data";
+import { buildFaqJsonLd, buildToolJsonLd } from "@zeetools/ui/lib/structured-data";
 import { buildLlmsTxt } from "@zeetools/ui/lib/llms";
 import { appUrl, zee } from "@/zee.config";
 
@@ -15,7 +15,7 @@ export const about: ToolAboutContent = {
     },
     {
       title: "What the server sees",
-      body: "A small signaling server relays the connection handshake, so it sees the room ID and your display name. Google's STUN server sees your IP address, as WebRTC needs.",
+      body: "A small signaling server relays the connection handshake, so it sees the room ID, your display name and your IP address (from the connection and the network candidates it passes on). Google's STUN server also sees your IP address, as WebRTC needs.",
     },
     {
       title: "Screen share and files",
@@ -33,7 +33,7 @@ export const about: ToolAboutContent = {
     },
     {
       q: "Is the call private?",
-      a: "Audio, video and files go directly between the browsers in the call over WebRTC, encrypted in transit, and do not pass through a server. A signaling server relays the room ID and your display name to connect you, and Google's STUN server sees your IP address. No call content is stored.",
+      a: "Audio, video and files go directly between the browsers in the call over WebRTC, encrypted in transit, and do not pass through a server. To connect you, a signaling server relays the room ID, your display name and the network candidates that contain your IP address, and Google's STUN server sees your IP address too. No call content is stored. The rooms you open are listed in this browser's local storage, so you can find them in the sidebar; you can remove them there.",
     },
     {
       q: "Can I share my screen or send files?",
@@ -80,7 +80,8 @@ export const llmsTxt = buildLlmsTxt({
   source: zee.source,
   privacy: [
     "Audio, video and files travel directly between browsers over WebRTC (DTLS-SRTP and SCTP), not through a media server.",
-    "A signaling server relays the connection handshake. It sees the room ID, a session peer ID and your display name, and keeps them in memory only.",
+    "A signaling server relays the connection handshake (offer, answer and ICE candidates). It sees the room ID, a session peer ID, your display name and your IP address, both from the connection and from the ICE candidates, and keeps them in memory only.",
+    "The rooms you open are listed in this browser's local storage (the sidebar's \"On this device\" list); you can remove them there.",
     "Google's public STUN server sees your IP address, as WebRTC needs to connect browsers.",
     "The room ID in the page URL is in the fragment (#room=...), which browsers do not send to the site's server.",
     "No account is needed. The display name is kept in session storage and cleared when the tab closes.",
@@ -92,3 +93,6 @@ export const llmsTxt = buildLlmsTxt({
     "There is no relay (TURN) server, so a call may not connect when a strict firewall or network blocks direct connections between the two browsers.",
   ],
 });
+
+/** The FAQ page's structured data, from the same questions it shows. */
+export const faqJsonLd = buildFaqJsonLd({ name: zee.name, url: appUrl, about });

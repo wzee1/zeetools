@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
+import { usePathname } from "next/navigation";
 import SidebarGroup from "@zeetools/ui/components/brand/sidebar-group";
 import CameraIcon from "@zeetools/ui/components/icons/media/camera-icon";
 import CloseIcon from "@zeetools/ui/components/icons/actions/close-icon";
@@ -23,6 +24,8 @@ export default function RoomHistory() {
   const call = useCallStatus();
   const { rooms, remove } = useRoomHistory();
   const { onNavigate } = useSidebar();
+  // From any page but the tool's (the FAQ), a room link has to load "/" first.
+  const base = usePathname() === "/" ? "" : "/";
 
   return (
     <SidebarGroup title="On this device" id="rooms-heading">
@@ -45,7 +48,7 @@ export default function RoomHistory() {
                   className="group relative"
                 >
                   <a
-                    href={`#room=${room.slug}`}
+                    href={`${base}#room=${room.slug}`}
                     onClick={onNavigate}
                     aria-current={active ? "page" : undefined}
                     className={sidebarItemClass(active, "pr-9")}

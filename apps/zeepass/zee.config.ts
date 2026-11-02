@@ -18,6 +18,7 @@ export const zee = {
     title: "zeepass: self-destructing secret links",
     description: "Share passwords, API keys and .env files as one-time links, encrypted in your browser with AES-GCM-256. Free, open source, no sign-up.",
   },
+  faq: "/faq", // the About and FAQ page, listed in the sidebar above the privacy notice
   hub: "https://wzee.dev",
   localOnly: true, // shows the privacy badge in the header
   privacy: {

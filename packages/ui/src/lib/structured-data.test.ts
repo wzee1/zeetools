@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildLlmsTxt } from "./llms";
-import { buildToolJsonLd, serializeJsonLd } from "./structured-data";
+import { buildFaqJsonLd, buildToolJsonLd, serializeJsonLd } from "./structured-data";
 
 const about = {
   heading: "About demo",
@@ -37,25 +37,30 @@ describe("buildToolJsonLd", () => {
       isAccessibleForFree: true,
       offers: { price: "0", priceCurrency: "USD" },
       image: "https://demo.wzee.dev/og.png",
-      screenshot: "https://demo.wzee.dev/og.png",
       inLanguage: "en",
       author: { "@id": "https://wzee.dev/#person", name: "Zoltán Farkas", url: "https://wzee.dev" },
       publisher: { "@id": "https://wzee.dev/#person" },
       isPartOf: { "@type": "WebSite", "@id": "https://wzee.dev/#website" },
-      codeRepository: input.source,
-      sameAs: [input.source],
     });
+    // Neither is a WebApplication property: the repo gets its own node.
+    expect(app).not.toHaveProperty("codeRepository");
+    expect(app).not.toHaveProperty("sameAs");
   });
 
-  it("leaves the repository out when there is no source", () => {
-    const bare = buildToolJsonLd({ ...input, source: "" })["@graph"][0] as Record<string, unknown>;
-    expect(bare).not.toHaveProperty("codeRepository");
-    expect(bare).not.toHaveProperty("sameAs");
+  it("puts the repository in a SoftwareSourceCode node that points at the app", () => {
+    expect(graph[1]).toMatchObject({ "@type": "SoftwareSourceCode", codeRepository: input.source, targetProduct: { "@id": "https://demo.wzee.dev/#app" } });
   });
 
-  it("builds the FAQPage from exactly the visible FAQ", () => {
-    const faq = graph[1] as { "@type": string; mainEntity: { name: string; acceptedAnswer: { text: string } }[] };
-    expect(faq["@type"]).toBe("FAQPage");
+  it("leaves the source node out when there is no source", () => {
+    expect(buildToolJsonLd({ ...input, source: "" })["@graph"]).toHaveLength(1);
+  });
+});
+
+describe("buildFaqJsonLd", () => {
+  const faq = buildFaqJsonLd(input);
+
+  it("builds the FAQPage at /faq from exactly the visible FAQ, about the app", () => {
+    expect(faq).toMatchObject({ "@type": "FAQPage", url: "https://demo.wzee.dev/faq", about: { "@id": "https://demo.wzee.dev/#app" } });
     expect(faq.mainEntity.map((item) => ({ q: item.name, a: item.acceptedAnswer.text }))).toEqual(about.faq);
   });
 });

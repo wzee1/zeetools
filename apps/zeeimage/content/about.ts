@@ -1,5 +1,5 @@
 import type { ToolAboutContent } from "@zeetools/ui/lib/about";
-import { buildToolJsonLd } from "@zeetools/ui/lib/structured-data";
+import { buildFaqJsonLd, buildToolJsonLd } from "@zeetools/ui/lib/structured-data";
 import { buildLlmsTxt } from "@zeetools/ui/lib/llms";
 import { appUrl, zee } from "@/zee.config";
 
@@ -15,7 +15,7 @@ export const about: ToolAboutContent = {
     },
     {
       title: "Batch pipeline",
-      body: "Ingest, configure, process, export. Scale by percentage, width, height or exact size, pick the format and quality, strip or keep metadata, and name the files with a pattern.",
+      body: "Ingest, configure, process, export. Scale by percentage, width, height or exact size, pick the format and quality, strip metadata or keep it, and name the files with a pattern.",
     },
     {
       title: "Favicon studio",
@@ -63,7 +63,7 @@ export const toolJsonLd = buildToolJsonLd({
     "Batch resize, convert and compress images",
     "Outputs WebP, PNG and JPEG, and AVIF where the browser can encode it",
     "Runs in Web Workers in the browser, no upload",
-    "Strip or keep EXIF metadata",
+    "Strip EXIF metadata, or keep it in JPEG, PNG and WebP output",
     "ZIP download",
     "Favicon studio: multi-size .ico, Apple touch icon, manifest icons",
     "Social safe-zone overlays",
@@ -83,6 +83,7 @@ export const llmsTxt = buildLlmsTxt({
     "Images are processed in the browser, in Web Workers. They are not uploaded.",
     "The site is a static export: there is no server step that receives your files.",
     "ZIP files are built in memory on your device.",
+    "EXIF metadata (camera details, location) is removed by default. With stripping turned off it is copied into JPEG, PNG and WebP output, with its orientation reset and its thumbnail dropped; AVIF output never carries it.",
   ],
   limits: [
     "Input: PNG, JPEG, WebP, AVIF, SVG, BMP, ICO, and HEIC/HEIF where the browser can decode it (Safari).",
@@ -90,3 +91,6 @@ export const llmsTxt = buildLlmsTxt({
     "Large batches are limited by the memory and processing power of your device.",
   ],
 });
+
+/** The FAQ page's structured data, from the same questions it shows. */
+export const faqJsonLd = buildFaqJsonLd({ name: zee.name, url: appUrl, about });

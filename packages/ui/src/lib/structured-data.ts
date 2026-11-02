@@ -18,45 +18,61 @@ export interface ToolJsonLdInput {
   image: string;
   /** The code on GitHub; left out of the markup when empty. */
   source?: string;
+  /** Only the FAQ page reads it. */
   about: Pick<ToolAboutContent, "faq">;
 }
 
-/** A WebApplication and a FAQPage in one @graph. The FAQ is built from the same data as the visible section. */
+/** The home page's graph: the WebApplication, and its source code as a SoftwareSourceCode node when there is one. */
 export function buildToolJsonLd(input: ToolJsonLdInput) {
-  const { name, url, description, category, featureList, image, source, about } = input;
+  const { name, url, description, category, featureList, image, source } = input;
+  const app = {
+    "@type": "WebApplication",
+    "@id": `${url}/#app`,
+    name,
+    url,
+    description,
+    applicationCategory: category,
+    operatingSystem: "Any (web browser)",
+    browserRequirements: "Requires a modern web browser with JavaScript enabled",
+    isAccessibleForFree: true,
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    image,
+    featureList,
+    inLanguage: "en",
+    author: PERSON,
+    publisher: PERSON,
+    isPartOf: WEBSITE,
+  };
+  // codeRepository belongs to SoftwareSourceCode, not to WebApplication, so the repo is its own node pointing at the app.
+  const code = source && {
+    "@type": "SoftwareSourceCode",
+    "@id": `${url}/#source`,
+    name: `${name} source code`,
+    codeRepository: source,
+    programmingLanguage: "TypeScript",
+    license: "https://opensource.org/licenses/MIT",
+    author: PERSON,
+    targetProduct: { "@id": app["@id"] },
+  };
+  return { "@context": "https://schema.org", "@graph": code ? [app, code] : [app] };
+}
+
+/** The FAQ page's graph: a FAQPage built from the same data as the visible questions, about the tool's app node. */
+export function buildFaqJsonLd({ name, url, about }: Pick<ToolJsonLdInput, "name" | "url" | "about">) {
   return {
     "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "WebApplication",
-        "@id": `${url}/#app`,
-        name,
-        url,
-        description,
-        applicationCategory: category,
-        operatingSystem: "Any (web browser)",
-        browserRequirements: "Requires a modern web browser with JavaScript enabled",
-        isAccessibleForFree: true,
-        offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-        image,
-        screenshot: image,
-        featureList,
-        inLanguage: "en",
-        author: PERSON,
-        publisher: PERSON,
-        isPartOf: WEBSITE,
-        ...(source && { codeRepository: source, sameAs: [source] }),
-      },
-      {
-        "@type": "FAQPage",
-        "@id": `${url}/#faq`,
-        mainEntity: about.faq.map(({ q, a }) => ({
-          "@type": "Question",
-          name: q,
-          acceptedAnswer: { "@type": "Answer", text: a },
-        })),
-      },
-    ],
+    "@type": "FAQPage",
+    "@id": `${url}/faq#faq`,
+    url: `${url}/faq`,
+    name: `${name} FAQ`,
+    inLanguage: "en",
+    about: { "@id": `${url}/#app` },
+    isPartOf: WEBSITE,
+    mainEntity: about.faq.map(({ q, a }) => ({
+      "@type": "Question",
+      name: q,
+      acceptedAnswer: { "@type": "Answer", text: a },
+    })),
   };
 }
 

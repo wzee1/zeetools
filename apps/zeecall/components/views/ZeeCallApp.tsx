@@ -27,12 +27,8 @@ import PeerAudio from "@/components/call/PeerAudio";
 // Same curve out as in: the incoming view staggers itself in (see Stagger in @zeetools/ui).
 const exit = { opacity: 0, y: -6, transition: { duration: 0.2, ease: [0.32, 0.72, 0, 1] as const } };
 
-interface ZeeCallAppProps {
-  /** The server-rendered About section; shown under the create and lobby views, not in a call. */
-  about: React.ReactNode;
-}
-
-export default function ZeeCallApp({ about }: ZeeCallAppProps) {
+/** The whole client app: the create, lobby and call views, chosen from the room in the URL hash. */
+export default function ZeeCallApp() {
   const roomName = useHashRoom();
   const [customRoomInput, setCustomRoomInput] = useState<string>("");
   const [peerId] = useSessionValue("zeecall_peer_id", () => randomId(8), "", true);
@@ -338,14 +334,12 @@ export default function ZeeCallApp({ about }: ZeeCallAppProps) {
   const pendingSender = remotePeers.find((p) => p.id === pendingFile?.peerId)?.name ?? "Peer";
 
   return (
-    <>
-      <main
-        className={cn(
-          "mx-auto flex w-full flex-col px-5 py-10 selection:bg-primary/25 sm:px-10 sm:py-12",
-          // Under the create and lobby views the panel scrolls: the tool fills at least its height and the About section sits below.
-          view === "call" ? "max-w-none shell:min-h-0 shell:flex-1" : "max-w-4xl shell:min-h-full shell:flex-none",
-        )}
-      >
+    <main
+      className={cn(
+        "mx-auto flex w-full flex-col px-5 py-10 selection:bg-primary/25 sm:px-10 sm:py-12 shell:min-h-0 shell:flex-1",
+        view === "call" ? "max-w-none" : "max-w-4xl",
+      )}
+    >
         <AnimatePresence mode="wait" initial={false}>
           <motion.div key={view} exit={exit} className="flex flex-col shell:min-h-0 shell:flex-1">
             {/* VIEW 1: HOME (No room specified in URL hash) */}
@@ -462,8 +456,6 @@ export default function ZeeCallApp({ about }: ZeeCallAppProps) {
           onConfirm={confirmSwitch}
           onCancel={() => setConfirm(null)}
         />
-      </main>
-      {view !== "call" && about}
-    </>
+    </main>
   );
 }

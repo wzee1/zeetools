@@ -17,6 +17,7 @@ export const zee = {
     title: "zeecall: private peer-to-peer video calls",
     description: "Encrypted browser-to-browser video calls with screen sharing and file transfer. Share a link and talk: no account, no install. Free and open source.",
   },
+  faq: "/faq", // the About and FAQ page, listed in the sidebar above the privacy notice
   hub: "https://wzee.dev",
   localOnly: true, // shows the privacy badge in the header
 } as const;

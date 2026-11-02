@@ -17,7 +17,7 @@ import { DropzoneHandle } from '@/components/zee-ui/dropzone';
 const exit = { opacity: 0, y: -6, transition: { duration: 0.2, ease: [0.32, 0.72, 0, 1] as const } };
 
 /** The mode lives in the URL (`?mode=`); the pipeline state lives here, so it survives a switch of mode. */
-function HomeView({ currentMode }: { currentMode: AppMode }) {
+function HomeContent({ currentMode }: { currentMode: AppMode }) {
   const dropzoneRef = useRef<DropzoneHandle>(null);
 
   const pipeline = useImagePipeline();
@@ -71,14 +71,14 @@ function HomeView({ currentMode }: { currentMode: AppMode }) {
 
 /** The only reader of the query string, so only this part waits for the browser. */
 function HomeFromUrl() {
-  return <HomeView currentMode={parseMode(useSearchParams().get('mode'))} />;
+  return <HomeContent currentMode={parseMode(useSearchParams().get('mode'))} />;
 }
 
-export default function Home() {
+export default function HomeView() {
   // useSearchParams needs a boundary for the static render. Its fallback is the default view (the batch pipeline),
   // so the prerendered HTML carries the page's heading and text instead of an empty shell.
   return (
-    <Suspense fallback={<HomeView currentMode="batch" />}>
+    <Suspense fallback={<HomeContent currentMode="batch" />}>
       <HomeFromUrl />
     </Suspense>
   );

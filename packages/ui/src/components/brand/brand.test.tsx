@@ -94,7 +94,7 @@ describe("ToolAbout", () => {
 
   it("renders the heading, intro, points and every FAQ answer as native details", () => {
     const { container } = render(<ToolAbout {...content} source="https://github.com/wzee1/zeetools" />);
-    expect(screen.getByRole("heading", { level: 2, name: "About demo" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "About demo" })).toBeInTheDocument();
     expect(screen.getByText("A demo tool.")).toBeInTheDocument();
     expect(screen.getByText("Body one.")).toBeInTheDocument();
     expect(container.querySelectorAll("details > summary")).toHaveLength(2);
