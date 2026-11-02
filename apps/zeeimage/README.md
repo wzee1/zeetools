@@ -46,7 +46,8 @@ The build is a plain static site (`output: "export"`), so it can be hosted anywh
 
 ## Where things are
 
-- `app/page.tsx`: the stepper that ties the steps together.
+- `content/about.ts`: the About and FAQ copy, which also feeds the FAQ structured data and `/llms.txt` (`app/llms.txt/route.ts`).
+- `app/page.tsx` and `components/shared/HomeView.tsx`: the page (a server component with the About section and structured data) and the stepper that ties the steps together.
 - `components/steps`, `components/modes`, `components/shared`: the four steps, the two extra modes, and shared pieces (the sidebar's mode rows, comparison viewer). `lib/modes.ts` maps the URL to a mode.
 - `hooks/use-image-pipeline.ts`: the worker pool and the batch state.
 - `lib/processors`: the processing strategy, dimension and encode helpers, and the worker client.

@@ -6,5 +6,5 @@ export const dynamic = "force-static";
 
 // The tool is one page; everything else (zeepass's /s/ links) is private and never listed.
 export default function sitemap(): MetadataRoute.Sitemap {
-  return [{ url: appUrl, changeFrequency: "monthly", priority: 1 }];
+  return [{ url: appUrl, lastModified: new Date(), changeFrequency: "monthly", priority: 1 }];
 }

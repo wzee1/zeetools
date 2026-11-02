@@ -30,7 +30,13 @@ export const metadata: Metadata = {
   description: zee.seo.description,
   applicationName: zee.name,
   authors: [{ name: "Zoltán Farkas", url: zee.hub }],
-  alternates: { canonical: "/" },
+  creator: "Zoltán Farkas",
+  publisher: "Zoltán Farkas",
+  keywords: ["peer-to-peer video call", "WebRTC video chat", "video call without account", "browser screen sharing", "send files peer to peer", "private video call", "free video calls", "no sign-up video chat"],
+  category: "communication",
+  formatDetection: { telephone: false },
+  // The text version of this page for AI assistants, generated from the same copy as the About section.
+  alternates: { canonical: "/", types: { "text/plain": "/llms.txt" } },
   openGraph: {
     type: "website",
     title: zee.seo.title,
