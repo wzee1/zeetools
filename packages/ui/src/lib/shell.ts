@@ -22,9 +22,15 @@ export function clampSidebarWidth(width: number): number {
 }
 
 /**
- * Runs in <head> before first paint: applies the saved sidebar state to <html>, so the shell renders
- * at its final size instead of jumping once React reads localStorage.
+ * Runs in <head> before first paint, and does two things on <html>:
+ *
+ * - Applies the saved sidebar state, so the shell renders at its final size instead of jumping once
+ *   React reads localStorage.
+ * - Marks `data-instant` when the visitor is coming back to the app: a reload, back/forward, or a link
+ *   from the same origin. Chrome keeps the previous page's last frame (the app itself) on screen until
+ *   the new page paints, so a preloader there reads as app, loader, app. With the flag the preloader
+ *   and the entrance are skipped (styles/tokens.css); first visits keep both.
  */
 export function shellBootScript(key: string): string {
-  return `(function(){try{var s=JSON.parse(localStorage.getItem(${JSON.stringify(key)})||"null");if(!s)return;var d=document.documentElement;if(s.collapsed)d.dataset.sidebar="collapsed";if(typeof s.width==="number")d.style.setProperty("--sidebar-w",Math.min(${SIDEBAR.max},Math.max(${SIDEBAR.min},s.width))+"px")}catch(e){}})()`;
+  return `(function(){var d=document.documentElement;try{var n=performance.getEntriesByType("navigation")[0],t=n&&n.type,r=document.referrer;if(t==="reload"||t==="back_forward"||(r&&new URL(r).origin===location.origin))d.dataset.instant=""}catch(e){}try{var s=JSON.parse(localStorage.getItem(${JSON.stringify(key)})||"null");if(!s)return;if(s.collapsed)d.dataset.sidebar="collapsed";if(typeof s.width==="number")d.style.setProperty("--sidebar-w",Math.min(${SIDEBAR.max},Math.max(${SIDEBAR.min},s.width))+"px")}catch(e){}})()`;
 }
