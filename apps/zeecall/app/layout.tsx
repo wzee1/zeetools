@@ -21,16 +21,26 @@ const inter = Inter({
   display: "swap",
 });
 
+// public/og.png is rendered from this app's window on wzee.dev/tools.
+const ogImage = { url: "/og.png", width: 2400, height: 1260, alt: zee.seo.title };
+
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
-  title: `${zee.name} — ${zee.description}`,
-  description: zee.description,
+  title: zee.seo.title,
+  description: zee.seo.description,
+  applicationName: zee.name,
+  authors: [{ name: "Zoltán Farkas", url: zee.hub }],
+  alternates: { canonical: "/" },
   openGraph: {
-    title: `${zee.name} — ${zee.description}`,
-    description: zee.description,
+    type: "website",
+    title: zee.seo.title,
+    description: zee.seo.description,
     url: appUrl,
     siteName: "wzee.dev",
+    locale: "en_US",
+    images: [ogImage],
   },
+  twitter: { card: "summary_large_image", title: zee.seo.title, description: zee.seo.description, images: [ogImage] },
 };
 
 export const viewport: Viewport = {

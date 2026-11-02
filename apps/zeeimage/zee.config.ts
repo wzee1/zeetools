@@ -12,6 +12,11 @@ export const zee = {
   } as { hu?: { name?: string; description?: string } },
   // This app's code, shown as a "Source" link on wzee.dev/tools; empty shows none.
   source: "https://github.com/wzee1/zeetools/tree/main/apps/zeeimage" as string,
+  // What search results and link previews show: the title and description in <head>, and public/og.png (2400x1260, a 2x 1200x630 card).
+  seo: {
+    title: "zeeimage: batch image converter in your browser",
+    description: "Resize, convert and compress images in bulk to WebP, PNG or JPEG, right in your browser. Your images are never uploaded. Free, no sign-up.",
+  },
   hub: "https://wzee.dev",
   localOnly: true, // shows the privacy badge in the header
 } as const;

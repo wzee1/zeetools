@@ -13,6 +13,11 @@ export const zee = {
   } as { hu?: { name?: string; description?: string } },
   // This app's code, shown as a "Source" link on wzee.dev/tools; empty shows none.
   source: "https://github.com/wzee1/zeetools/tree/main/apps/zeepass" as string,
+  // What search results and link previews show: the title and description in <head>, and public/og.png (2400x1260, a 2x 1200x630 card).
+  seo: {
+    title: "zeepass: self-destructing secret links",
+    description: "Share passwords, API keys and .env files as one-time links, encrypted in your browser with AES-GCM-256. Free, open source, no sign-up.",
+  },
   hub: "https://wzee.dev",
   localOnly: true, // shows the privacy badge in the header
   privacy: {
