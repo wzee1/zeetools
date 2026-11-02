@@ -148,7 +148,7 @@ Import from subpaths, for example `@zeetools/ui/components/ui/actions/button`.
 
 **Context**
 
-- `ZeeProvider` (`components/zee-provider`) and `useZee()` (`hooks/use-zee`): the app's identity, `{ name, hub, localOnly?, privacy? }` (`ZeeInfo`, in `lib/zee`). `Providers` takes it as its `zee` prop. Without it the components use a generic identity.
+- `ZeeProvider` (`components/zee-provider`) and `useZee()` (`hooks/use-zee`): the app's identity, `{ name, hub, localOnly?, privacy?, faq? }` (`ZeeInfo`, in `lib/zee`). `Providers` takes it as its `zee` prop. Without it the components use a generic identity.
 
 **App shell** (`components/brand`)
 
@@ -157,7 +157,15 @@ Import from subpaths, for example `@zeetools/ui/components/ui/actions/button`.
 - `PageHeader` (a regular-weight title with its description, an optional `leading` mark and `aside`) with `Stagger` and `StaggerItem` (`components/motion`), which settle a view in one item after another.
 - `ReadySignal`: marks the page ready so the preloader fades and the entrance plays.
 - `ZeeHeader`, `ZeeFooter`, `PrivacyBadge`, `ZeeMark`: the top-bar layout and the logo.
+- An FAQ row: set `faq` (a path such as `"/faq"`) in `ZeeInfo` and the sidebar lists it above the privacy notice, marked current on that page.
 - `lib/shell`: `shellKey(name)`, `shellBootScript(key)`, `SIDEBAR`, `clampSidebarWidth`. `useShell()` (`hooks/use-shell`) reads and writes the saved state.
+
+**FAQ page and search** (`components/brand`, `lib`)
+
+- `ToolAbout`: a server-rendered About page (`<main>` with an `<h1>`, intro, points, an FAQ and source and privacy links) from a `ToolAboutContent` (`lib/about`). Each question is a `FaqItem`: a native `<details>` that animates open and closed with the Web Animations API, opens instantly without JavaScript, and skips the motion with reduced motion.
+- `JsonLd` (`components/brand/json-ld`): one `<script type="application/ld+json">` block, serialized with `serializeJsonLd` so `<` and the line separators are escaped.
+- `lib/structured-data`: `buildToolJsonLd` (a `WebApplication`, plus a `SoftwareSourceCode` node for the repo) and `buildFaqJsonLd` (a `FAQPage` built from the same data as the visible questions).
+- `lib/llms`: `buildLlmsTxt`, a tool's `llms.txt` (llmstxt.org layout) from the same About content.
 
 **UI** (`components/ui`)
 
